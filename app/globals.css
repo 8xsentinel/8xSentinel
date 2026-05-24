@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-void: #03050c;          /* Deep void background */
+  --bg-surface: #070b16;       /* Card backgrounds */
+  --bg-elevated: #0d1222;      /* Elevated panels */
+  --border-subtle: #121b33;    /* Default borders */
+  --border-glow: rgba(0, 240, 255, 0.15); /* Glowing borders */
+  
+  --accent-cyan: #00f0ff;      /* Electric Cyan / Trust indicator */
+  --accent-cyan-dim: #008fa0;  /* Muted cyan */
+  --accent-blue: #0066ff;      /* Deep Esports Blue */
+  --accent-amber: #ffaa00;     /* Warn factor */
+  --accent-red: #ff3366;       /* Danger / scam confirmed */
+  --accent-green: #00ff88;     /* Verified / green light */
+  --accent-purple: #8b5cf6;    /* Premium agent purple */
+  --accent-purple-glow: rgba(139, 92, 246, 0.35);
+  
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+}
+
+body {
+  color: var(--text-primary);
+  background-color: var(--bg-void);
+  font-family: var(--font-body), sans-serif;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(0, 102, 255, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 100% 30%, rgba(139, 92, 246, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 0% 70%, rgba(0, 240, 255, 0.04) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: 0.05em;
+}
+
+/* Custom scrollbar with cyber styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-void);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 3px;
+  border: 1px solid var(--bg-void);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan-dim);
+}
+
+/* Cyber grid lines background decoration */
+.cyber-grid {
+  background-image: 
+    linear-gradient(to right, rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  position: relative;
+}
+
+.cyber-grid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 20%, var(--bg-void) 90%);
+  pointer-events: none;
+}
+
+/* Scanline visual sweep effect */
+.scanlines {
+  position: relative;
+  overflow: hidden;
+}
+.scanlines::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 240, 255, 0.1), transparent);
+  animation: scanline-sweep 6s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes scanline-sweep {
+  0% { top: -10px; }
+  100% { top: 110%; }
+}
+
+/* Glowing animations */
+@keyframes neon-pulse-cyan {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.1), 0 0 2px rgba(0, 240, 255, 0.2);
+    border-color: rgba(0, 240, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.25), 0 0 8px rgba(0, 240, 255, 0.4);
+    border-color: rgba(0, 240, 255, 0.5);
+  }
+}
+
+.pulse-glow-cyan {
+  animation: neon-pulse-cyan 3s infinite ease-in-out;
+}
+
+@keyframes glitch-flicker {
+  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+    opacity: 0.99;
+    filter: hue-rotate(0deg) saturate(1);
+  }
+  20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+    opacity: 0.4;
+    filter: hue-rotate(90deg) saturate(1.3);
+  }
+}
+
+.glitch-text {
+  animation: glitch-flicker 4s infinite;
+}
+
+/* Cyber card corner clipping paths */
+.clip-cyber {
+  clip-path: polygon(
+    0px 0px, 
+    calc(100% - 12px) 0px, 
+    100% 12px, 
+    100% 100%, 
+    12px 100%, 
+    0px calc(100% - 12px)
+  );
+}
+
+.clip-cyber-btn {
+  clip-path: polygon(
+    0% 0%, 
+    calc(100% - 8px) 0%, 
+    100% 8px, 
+    100% 100%, 
+    8px 100%, 
+    0% calc(100% - 8px)
+  );
+}
+
+/* Glowing text utilities */
+.text-glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+.text-glow-red {
+  text-shadow: 0 0 10px rgba(255, 51, 102, 0.4);
+}
+.text-glow-green {
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
