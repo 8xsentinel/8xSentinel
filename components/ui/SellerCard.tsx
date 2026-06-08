@@ -1,87 +1,68 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import { Star, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { TrustedReseller } from '../../types';
-import GlowCard from './GlowCard';
-import TrustScoreRing from './TrustScoreRing';
+import { ShieldCheck, Star, MessageCircle, Phone } from 'lucide-react';
 
 interface SellerCardProps {
   reseller: TrustedReseller;
 }
 
+const badgeLabel: Record<string, string> = {
+  sentinel_verified: '🔷 Sentinel Verified',
+  sentinel_trusted:  '🟨 Sentinel Trusted',
+};
+
 export default function SellerCard({ reseller }: SellerCardProps) {
-  // Feedback positive ratio
-  const totalFeedback = reseller.positive_feedback + reseller.negative_feedback;
-  const ratingPct = totalFeedback > 0 ? Math.round((reseller.positive_feedback / totalFeedback) * 100) : 100;
-  
-  // Convert rating percentage to stars
-  const starsCount = Math.round((ratingPct / 100) * 5);
+  const profileUsername = reseller.profile?.username || reseller.id;
+  const topBadge = reseller.badges?.find((b) =>
+    ['sentinel_trusted', 'sentinel_verified'].includes(b)
+  );
 
   return (
-    <GlowCard glowColor="green" className="h-full flex flex-col justify-between">
-      <div className="space-y-4">
-        {/* Header: Avatar, Name, Trust Score */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex gap-3">
-            <div className="relative w-12 h-12 rounded bg-bg-elevated border border-border-subtle flex items-center justify-center font-bold text-accent-green text-lg font-display">
-              {reseller.store_name.slice(0, 2).toUpperCase()}
-              <div className="absolute -bottom-1 -right-1 bg-bg-void rounded-full p-0.5">
-                <CheckCircle2 className="w-4 h-4 text-accent-green fill-bg-void" />
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold tracking-wide font-display text-text-primary">
-                {reseller.store_name}
-              </h3>
-              <p className="text-xs text-text-muted font-mono">{reseller.tagline || 'Verified Trading Agent'}</p>
-            </div>
+    <Link href={`/resellers/${profileUsername}`}>
+      <div className="group backdrop-blur-md bg-white/[0.02] border border-border-subtle hover:border-accent-green/30 rounded-xl p-5 transition-all duration-200 cursor-pointer h-full flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-text-primary font-display uppercase tracking-wide truncate">
+              {reseller.store_name}
+            </h3>
+            {reseller.tagline && (
+              <p className="text-[10px] text-text-secondary font-sans mt-0.5 truncate">{reseller.tagline}</p>
+            )}
           </div>
-          <TrustScoreRing score={reseller.trust_score} size={48} type="reseller" />
-        </div>
-
-        {/* Bio snippet */}
-        {reseller.bio && (
-          <p className="text-sm text-text-secondary line-clamp-2 min-h-[40px]">
-            {reseller.bio}
-          </p>
-        )}
-
-        {/* Specializations Tags */}
-        <div className="flex flex-wrap gap-1">
-          {reseller.specializes_in.slice(0, 3).map(tag => (
-            <span key={tag} className="text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 rounded bg-white/[0.03] border border-border-subtle text-text-secondary">
-              {tag.replace('_', ' ')}
-            </span>
-          ))}
-          {reseller.specializes_in.length > 3 && (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.03] border border-border-subtle text-text-muted">
-              +{reseller.specializes_in.length - 3}
+          {topBadge && (
+            <span className="text-[10px] font-mono font-bold whitespace-nowrap text-accent-green border border-accent-green/30 bg-accent-green/5 px-2 py-0.5 rounded">
+              {badgeLabel[topBadge] || topBadge}
             </span>
           )}
         </div>
-      </div>
 
-      {/* Stats footer and CTA */}
-      <div className="mt-5 pt-3 border-t border-border-subtle/30 flex items-center justify-between">
-        <div className="font-mono">
-          <div className="flex items-center text-accent-amber gap-0.5 text-xs">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className={`w-3.5 h-3.5 ${i < starsCount ? 'fill-accent-amber' : 'text-text-muted'}`} />
-            ))}
-            <span className="text-text-secondary ml-1 font-bold">{ratingPct}%</span>
-          </div>
-          <p className="text-[10px] text-text-muted mt-0.5">
-            {reseller.deals_completed} deal{reseller.deals_completed !== 1 ? 's' : ''} · {reseller.years_active}y active
-          </p>
+        <div className="flex gap-4 text-[10px] font-mono text-text-muted">
+          {reseller.telegram_username && (
+            <span className="flex items-center gap-1">
+              <MessageCircle className="w-3 h-3" /> @{reseller.telegram_username}
+            </span>
+          )}
+          {reseller.whatsapp_number && (
+            <span className="flex items-center gap-1">
+              <Phone className="w-3 h-3" /> {reseller.whatsapp_number}
+            </span>
+          )}
         </div>
 
-        <Link
-          href={`/resellers/${reseller.profile?.username || reseller.id}`}
-          className="bg-accent-green/10 border border-accent-green/30 text-accent-green hover:bg-accent-green hover:text-bg-void px-3.5 py-1.5 rounded text-xs font-semibold tracking-wide transition-all duration-200"
-        >
-          View Profile
-        </Link>
+        <div className="mt-auto flex items-center justify-between pt-3 border-t border-border-subtle/30">
+          <div className="flex items-center gap-1 text-accent-green">
+            <Star className="w-3.5 h-3.5 fill-current" />
+            <span className="text-xs font-bold font-mono">{reseller.trust_score ?? 0}/100</span>
+          </div>
+          <div className="flex items-center gap-1 text-[10px] text-text-muted font-mono">
+            <ShieldCheck className="w-3.5 h-3.5 text-accent-cyan" />
+            <span className="capitalize">{reseller.verification_status}</span>
+          </div>
+        </div>
       </div>
-    </GlowCard>
+    </Link>
   );
 }

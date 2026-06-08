@@ -1,21 +1,6 @@
-import { createBrowserClient } from '@supabase/ssr';
+// Supabase has been replaced by Convex.
+// This stub is kept so existing lib/db.ts references don't break.
+// All calls will fall through to the in-memory mockDb.
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-// Check if keys are active and not dummy placeholders
-export const isSupabaseConfigured = (): boolean => {
-  return !!(
-    supabaseUrl &&
-    supabaseUrl !== 'https://your-project-id.supabase.co' &&
-    supabaseUrl.trim() !== '' &&
-    supabaseAnonKey &&
-    !supabaseAnonKey.startsWith('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...') &&
-    supabaseAnonKey.trim() !== ''
-  );
-};
-
-// Initialize browser client
-export const supabase = isSupabaseConfigured()
-  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
-  : null;
+export const isSupabaseConfigured = (): boolean => false;
+export const supabase = null;

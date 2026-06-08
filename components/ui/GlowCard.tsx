@@ -1,91 +1,32 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface GlowCardProps {
   children: React.ReactNode;
   className?: string;
-  glowColor?: 'cyan' | 'blue' | 'amber' | 'red' | 'green' | 'purple' | 'subtle';
-  onClick?: () => void;
-  hoverGlow?: boolean;
-  cyberBorder?: boolean;
+  glowColor?: 'cyan' | 'purple' | 'red' | 'green' | 'none';
 }
 
-export default function GlowCard({
-  children,
-  className = '',
-  glowColor = 'cyan',
-  onClick,
-  hoverGlow = true,
-  cyberBorder = true
-}: GlowCardProps) {
-  const getGlowStyles = () => {
-    switch (glowColor) {
-      case 'cyan':
-        return 'hover:border-accent-cyan/40 hover:shadow-glow-cyan';
-      case 'blue':
-        return 'hover:border-accent-blue/40 hover:shadow-glow-blue';
-      case 'amber':
-        return 'hover:border-accent-amber/40 hover:shadow-glow-amber';
-      case 'red':
-        return 'hover:border-accent-red/40 hover:shadow-glow-red';
-      case 'green':
-        return 'hover:border-accent-green/40 hover:shadow-glow-green';
-      case 'purple':
-        return 'hover:border-accent-purple/40 hover:shadow-glow-purple';
-      case 'subtle':
-      default:
-        return 'hover:border-border-subtle/80 hover:shadow-[0_0_20px_rgba(18,27,51,0.25)]';
-    }
+export default function GlowCard({ children, className, glowColor = 'cyan' }: GlowCardProps) {
+  const glowClasses = {
+    cyan: 'hover:border-accent-cyan/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.08)]',
+    purple: 'hover:border-accent-purple/30 hover:shadow-[0_0_30px_rgba(139,92,246,0.08)]',
+    red: 'hover:border-accent-red/30 hover:shadow-[0_0_30px_rgba(239,68,68,0.08)]',
+    green: 'hover:border-accent-green/30 hover:shadow-[0_0_30px_rgba(34,197,94,0.08)]',
+    none: '',
   };
 
-  const getBorderColor = () => {
-    switch (glowColor) {
-      case 'cyan': return 'border-accent-cyan/15';
-      case 'blue': return 'border-accent-blue/15';
-      case 'amber': return 'border-accent-amber/15';
-      case 'red': return 'border-accent-red/15';
-      case 'green': return 'border-accent-green/15';
-      case 'purple': return 'border-accent-purple/15';
-      default: return 'border-border-subtle';
-    }
-  };
-
-  const cardContent = (
+  return (
     <div
-      onClick={onClick}
-      className={`
-        relative backdrop-blur-md bg-bg-surface/80 border ${getBorderColor()} p-6 
-        transition-all duration-300 ease-out overflow-hidden
-        ${cyberBorder ? 'clip-cyber' : 'rounded-xl'}
-        ${onClick ? 'cursor-pointer' : ''}
-        ${hoverGlow ? getGlowStyles() : ''}
-        ${className}
-      `}
-    >
-      {/* Visual cyber decorations: diagonal corner highlights */}
-      {cyberBorder && (
-        <>
-          <span className="absolute top-0 right-0 w-3.5 h-[1px] bg-accent-cyan/35 transform rotate-45 translate-x-1 translate-y-[2px]" />
-          <span className="absolute bottom-0 left-0 w-3.5 h-[1px] bg-accent-cyan/35 transform rotate-45 -translate-x-1 -translate-y-[2px]" />
-        </>
+      className={cn(
+        'backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl transition-all duration-300',
+        glowClasses[glowColor],
+        className
       )}
-      
+    >
       {children}
     </div>
   );
-
-  if (hoverGlow) {
-    return (
-      <motion.div
-        whileHover={{ y: -3 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-      >
-        {cardContent}
-      </motion.div>
-    );
-  }
-
-  return cardContent;
 }

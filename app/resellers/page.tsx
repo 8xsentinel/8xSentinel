@@ -1,119 +1,75 @@
-'use client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ShieldCheck, Search, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
-import React, { useEffect, useState } from 'react';
-import Navbar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
-import SellerCard from '../../components/ui/SellerCard';
-import { db } from '../../lib/db';
-import { TrustedReseller } from '../../types';
-import { ShieldCheck, Filter, Plus } from 'lucide-react';
-import Link from 'next/link';
-
-export default function ResellersPage() {
-  const [resellers, setResellers] = useState<TrustedReseller[]>([]);
-  const [activeSpecialty, setActiveSpecialty] = useState<string>('all');
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadResellers = async () => {
-      const data = await db.getResellers();
-
-      if (isMounted) {
-        setResellers(Array.isArray(data) ? data : []);
-      }
-    };
-
-    loadResellers();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const specialties = [
-    { id: 'all', label: 'All Specialties' },
-    { id: 'account_sale', label: 'Account Sales' },
-    { id: 'uc_topup', label: 'UC Top-up' },
-    { id: 'item_trading', label: 'Item Trading' },
-    { id: 'recovery', label: 'Account Recovery' }
+export default function ResellersDirectory() {
+  // Mock data for UI display until Convex is connected
+  const mockResellers = [
+    { id: "1", name: "Apex Trades", username: "apextrades", level: "sentinel_trusted", score: 98, reports: 0 },
+    { id: "2", name: "ProGaming Accounts", username: "pro_gaming", level: "sentinel_verified", score: 85, reports: 1 },
+    { id: "3", name: "Elite Sellers", username: "elitesellers", level: "none", score: 50, reports: 4 },
   ];
 
-  const filteredResellers = activeSpecialty === 'all'
-    ? resellers
-    : resellers.filter(r => r.specializes_in.includes(activeSpecialty));
-
   return (
-    <>
-      <Navbar />
-      <main className="flex-1 max-w-6xl mx-auto py-12 px-4 space-y-8 font-mono">
-        
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-accent-green text-xs uppercase tracking-wider">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Reseller Network Database</span>
-            </div>
-            <h1 className="text-3xl font-bold font-display uppercase tracking-wider text-text-primary">
-              Verified Agents Directory
-            </h1>
-            <p className="text-text-secondary text-xs font-sans font-medium">
-              Browse approved BGMI resellers who comply with community trading regulations.
-            </p>
-          </div>
-
-          <div>
-            <Link
-              href="/apply-verification"
-              className="flex items-center gap-1.5 bg-accent-green text-bg-void font-bold font-mono text-xs uppercase tracking-wider px-5 py-2.5 rounded hover:shadow-[0_0_20px_rgba(16,185,129,0.25)] transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Apply Verification</span>
-            </Link>
-          </div>
+    <div className="container py-12 md:py-24 max-w-6xl mx-auto space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight">Reseller Directory</h1>
+          <p className="text-muted-foreground">Browse and search for trusted account resellers.</p>
         </div>
-
-        {/* Filter Controls */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-border-subtle/50 pb-4">
-          <div className="flex items-center gap-1 text-xs text-text-muted mr-2">
-            <Filter className="w-3.5 h-3.5" />
-            <span>Category:</span>
+        <div className="flex w-full md:w-auto gap-2">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search resellers..." className="pl-8" />
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            {specialties.map(spec => (
-              <button
-                key={spec.id}
-                onClick={() => setActiveSpecialty(spec.id)}
-                className={`
-                  px-3 py-1 rounded text-xs font-medium transition-all duration-200 border
-                  ${activeSpecialty === spec.id 
-                    ? 'border-accent-green text-accent-green bg-accent-green/5' 
-                    : 'border-border-subtle text-text-secondary hover:text-text-primary'}
-                `}
-              >
-                {spec.label}
-              </button>
-            ))}
-          </div>
+          <Button variant="outline" size="icon">
+            <Filter className="h-4 w-4" />
+          </Button>
         </div>
+      </div>
 
-        {/* Grid List */}
-        {filteredResellers.length === 0 ? (
-          <div className="backdrop-blur-md bg-white/[0.01] border border-border-subtle rounded-xl p-12 text-center text-text-muted font-sans">
-            <p className="text-sm">No verified resellers match the selected specialization filter.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-            {filteredResellers.map(reseller => (
-              <SellerCard key={reseller.id} reseller={reseller} />
-            ))}
-          </div>
-        )}
-
-      </main>
-      <Footer />
-    </>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {mockResellers.map((reseller) => (
+          <Card key={reseller.id} className="flex flex-col">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-xl">{reseller.name}</CardTitle>
+                  <CardDescription>@{reseller.username}</CardDescription>
+                </div>
+                {reseller.level === "sentinel_trusted" && (
+                  <Badge className="bg-yellow-500 hover:bg-yellow-600">
+                    <ShieldCheck className="w-3 h-3 mr-1" /> Trusted
+                  </Badge>
+                )}
+                {reseller.level === "sentinel_verified" && (
+                  <Badge className="bg-blue-500 hover:bg-blue-600">
+                    <ShieldCheck className="w-3 h-3 mr-1" /> Verified
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-end">
+              <div className="flex justify-between items-center text-sm mt-4">
+                <span className="text-muted-foreground">Trust Score</span>
+                <span className={`font-medium ${reseller.score >= 80 ? 'text-green-500' : 'text-yellow-500'}`}>
+                  {reseller.score}/100
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm mt-2 mb-6">
+                <span className="text-muted-foreground">Reports</span>
+                <span className="font-medium text-destructive">{reseller.reports}</span>
+              </div>
+              <Link href={`/reseller/${reseller.username}`} className="w-full">
+                <Button variant="outline" className="w-full">View Profile</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }

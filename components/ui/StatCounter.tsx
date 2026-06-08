@@ -4,55 +4,40 @@ import React, { useEffect, useState } from 'react';
 
 interface StatCounterProps {
   value: number;
-  duration?: number; // duration in ms
   prefix?: string;
   suffix?: string;
+  duration?: number;
 }
 
-export default function StatCounter({
-  value,
-  duration = 1000,
-  prefix = '',
-  suffix = ''
-}: StatCounterProps) {
+export default function StatCounter({ value, prefix = '', suffix = '', duration = 1500 }: StatCounterProps) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    let startTimestamp: number | null = null;
-    const endValue = value;
+    if (value === 0) return;
+    const start = 0;
+    const end = value;
+    const steps = 40;
+    const increment = end / steps;
+    let current = start;
+    let step = 0;
 
-    const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      
-      // Easing out quadratic
-      const easeProgress = progress * (2 - progress);
-      const currentCount = Math.floor(easeProgress * endValue);
-      
-      setCount(currentCount);
-
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
+    const timer = setInterval(() => {
+      step++;
+      current += increment;
+      if (step >= steps) {
+        setCount(end);
+        clearInterval(timer);
       } else {
-        setCount(endValue);
+        setCount(Math.floor(current));
       }
-    };
+    }, duration / steps);
 
-    window.requestAnimationFrame(step);
+    return () => clearInterval(timer);
   }, [value, duration]);
 
-  const formatNumber = (num: number) => {
-    if (suffix === '₹' || prefix === '₹') {
-      return num.toLocaleString('en-IN');
-    }
-    return num.toString();
-  };
-
   return (
-    <span className="font-mono font-bold tracking-tight">
-      {prefix}
-      {formatNumber(count)}
-      {suffix}
+    <span>
+      {prefix}{count.toLocaleString('en-IN')}{suffix}
     </span>
   );
 }

@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Shield, Search, FileSpreadsheet, User, Users, Menu, X, ArrowRightLeft, ShieldAlert } from 'lucide-react';
+import { Show, SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
+import { Shield, Search, FileSpreadsheet, Users, Menu, X, ArrowRightLeft, ShieldAlert } from 'lucide-react';
 import { db } from '../../lib/db';
 import { Profile } from '../../types';
 import { toast } from 'sonner';
@@ -11,13 +12,18 @@ import { toast } from 'sonner';
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user: clerkUser, isSignedIn } = useUser();
   const [user, setUser] = useState<Profile | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    setUser(db.getCurrentUser());
-  }, [pathname]);
+    const timer = window.setTimeout(() => {
+      setUser(isSignedIn ? db.getCurrentUser() : null);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [isSignedIn, pathname]);
 
   const handleRoleChange = (role: 'user' | 'moderator' | 'admin') => {
     const updated = db.setCurrentUser(role);
@@ -41,6 +47,12 @@ export default function Navbar() {
   ];
 
   const isMod = user?.role === 'moderator' || user?.role === 'admin';
+  const displayName =
+    clerkUser?.fullName ||
+    clerkUser?.primaryEmailAddress?.emailAddress ||
+    user?.display_name ||
+    user?.username ||
+    'Operator';
 
   return (
     <nav className="sticky top-0 z-50 bg-[#03050c]/85 backdrop-blur-lg border-b border-border-subtle/70 transition-all duration-300">
@@ -79,93 +91,108 @@ export default function Navbar() {
               );
             })}
 
-            {isMod && (
-              <Link
-                href="/admin"
-                className={`
-                  flex items-center gap-2 px-3 py-2 rounded text-xs font-mono uppercase tracking-widest font-bold transition-all duration-200
-                  ${pathname.startsWith('/admin') 
-                    ? 'text-accent-purple bg-accent-purple/5 border-b-2 border-accent-purple' 
-                    : 'text-text-secondary hover:text-accent-purple hover:bg-white/[0.02]'}
-                `}
-              >
-                <ShieldAlert className="w-4 h-4 text-accent-purple animate-pulse" />
-                <span>Command Deck</span>
-              </Link>
-            )}
+            <Show when="signed-in">
+              {isMod && (
+                <Link
+                  href="/admin"
+                  className={`
+                    flex items-center gap-2 px-3 py-2 rounded text-xs font-mono uppercase tracking-widest font-bold transition-all duration-200
+                    ${pathname.startsWith('/admin') 
+                      ? 'text-accent-purple bg-accent-purple/5 border-b-2 border-accent-purple' 
+                      : 'text-text-secondary hover:text-accent-purple hover:bg-white/[0.02]'}
+                  `}
+                >
+                  <ShieldAlert className="w-4 h-4 text-accent-purple animate-pulse" />
+                  <span>Command Deck</span>
+                </Link>
+              )}
+            </Show>
           </div>
 
           {/* Actions & Profile Selector */}
           <div className="hidden md:flex items-center gap-5">
-            {/* Override Terminal Switcher widget */}
-            <div className="relative">
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 px-4.5 py-2 rounded bg-bg-surface border border-border-subtle hover:border-accent-cyan/40 text-xs font-mono text-text-secondary transition-all select-none clip-cyber-btn"
-              >
-                <ArrowRightLeft className="w-3.5 h-3.5 text-accent-cyan animate-pulse" />
-                <span>Clearance: <span className="font-bold text-text-primary uppercase">{user?.role || 'Guest'}</span></span>
-              </button>
+            <Show when="signed-in">
+              {/* Override Terminal Switcher widget */}
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 px-4.5 py-2 rounded bg-bg-surface border border-border-subtle hover:border-accent-cyan/40 text-xs font-mono text-text-secondary transition-all select-none clip-cyber-btn"
+                >
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-accent-cyan animate-pulse" />
+                  <span>Clearance: <span className="font-bold text-text-primary uppercase">{user?.role || 'User'}</span></span>
+                </button>
 
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-3 w-56 bg-bg-surface border border-border-subtle rounded shadow-2xl py-2 z-50 font-mono text-xs clip-cyber">
-                  <div className="px-4 py-2 border-b border-border-subtle/30 text-[10px] text-text-muted uppercase tracking-widest font-bold">
-                    Terminal Override:
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-3 w-56 bg-bg-surface border border-border-subtle rounded shadow-2xl py-2 z-50 font-mono text-xs clip-cyber">
+                    <div className="px-4 py-2 border-b border-border-subtle/30 text-[10px] text-text-muted uppercase tracking-widest font-bold">
+                      Terminal Override:
+                    </div>
+                    <button
+                      onClick={() => handleRoleChange('admin')}
+                      className="w-full text-left px-4 py-2.5 hover:bg-accent-purple/10 text-accent-purple font-bold flex items-center justify-between"
+                    >
+                      <span>ADMIN DECK</span>
+                      {user?.role === 'admin' && <span className="text-accent-purple">✓</span>}
+                    </button>
+                    <button
+                      onClick={() => handleRoleChange('moderator')}
+                      className="w-full text-left px-4 py-2.5 hover:bg-accent-cyan/10 text-accent-cyan font-bold flex items-center justify-between"
+                    >
+                      <span>MODERATOR</span>
+                      {user?.role === 'moderator' && <span className="text-accent-cyan">✓</span>}
+                    </button>
+                    <button
+                      onClick={() => handleRoleChange('user')}
+                      className="w-full text-left px-4 py-2.5 hover:bg-accent-green/10 text-accent-green font-bold flex items-center justify-between"
+                    >
+                      <span>STANDARD OPERATOR</span>
+                      {user?.role === 'user' && <span className="text-accent-green">✓</span>}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleRoleChange('admin')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-accent-purple/10 text-accent-purple font-bold flex items-center justify-between"
-                  >
-                    <span>ADMIN DECK</span>
-                    {user?.role === 'admin' && <span className="text-accent-purple">✓</span>}
-                  </button>
-                  <button
-                    onClick={() => handleRoleChange('moderator')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-accent-cyan/10 text-accent-cyan font-bold flex items-center justify-between"
-                  >
-                    <span>MODERATOR</span>
-                    {user?.role === 'moderator' && <span className="text-accent-cyan">✓</span>}
-                  </button>
-                  <button
-                    onClick={() => handleRoleChange('user')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-accent-green/10 text-accent-green font-bold flex items-center justify-between"
-                  >
-                    <span>STANDARD OPERATOR</span>
-                    {user?.role === 'user' && <span className="text-accent-green">✓</span>}
-                  </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </Show>
 
             {/* Profile Avatar / Reputation */}
-            {user && (
+            <Show when="signed-in">
               <div className="flex items-center gap-3 border-l border-border-subtle/60 pl-5">
-                <div className="relative">
-                  <img
-                    src={user.avatar_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=user'}
-                    alt="avatar"
-                    className="w-9 h-9 rounded-md border border-border-subtle bg-bg-surface p-0.5"
-                  />
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-accent-green rounded-full border-2 border-bg-void animate-pulse"></div>
-                </div>
+                <UserButton />
                 <div className="text-left font-mono">
-                  <p className="text-xs font-bold text-text-primary leading-tight truncate max-w-[100px]">{user.display_name || user.username}</p>
-                  <p className="text-[10px] text-accent-cyan font-bold">{user.reputation_points} REP</p>
+                  <p className="text-xs font-bold text-text-primary leading-tight truncate max-w-[130px]">{displayName}</p>
+                  <p className="text-[10px] text-accent-cyan font-bold">{user?.reputation_points ?? 0} REP</p>
                 </div>
               </div>
-            )}
+            </Show>
+
+            <Show when="signed-out">
+              <div className="flex items-center gap-2">
+                <SignInButton mode="modal">
+                  <button className="h-9 rounded border border-border-subtle px-3 text-[10px] font-mono font-bold uppercase tracking-widest text-text-secondary transition-colors hover:border-accent-cyan/40 hover:text-text-primary">
+                    Sign In
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className="h-9 rounded bg-accent-purple px-3 text-[10px] font-mono font-bold uppercase tracking-widest text-white transition-colors hover:bg-accent-pink">
+                    Join
+                  </button>
+                </SignUpButton>
+              </div>
+            </Show>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-3">
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="px-2.5 py-1.5 rounded bg-bg-surface border border-border-subtle text-[10px] font-mono text-text-secondary"
-            >
-              Clearance: <span className="font-bold text-text-primary uppercase">{user?.role || 'Guest'}</span>
-            </button>
+            <Show when="signed-in">
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="px-2.5 py-1.5 rounded bg-bg-surface border border-border-subtle text-[10px] font-mono text-text-secondary"
+              >
+                Clearance: <span className="font-bold text-text-primary uppercase">{user?.role || 'User'}</span>
+              </button>
+            </Show>
             
-            {dropdownOpen && (
+            <Show when="signed-in">
+              {dropdownOpen && (
               <div className="absolute right-16 top-16 w-48 bg-bg-surface border border-border-subtle rounded shadow-2xl py-1.5 z-50 font-mono text-[10px] clip-cyber">
                 <button onClick={() => handleRoleChange('admin')} className="w-full text-left px-4 py-2 hover:bg-white/[0.03] text-accent-purple font-bold">
                   ADMIN DECK
@@ -177,7 +204,19 @@ export default function Navbar() {
                   STANDARD OPERATOR
                 </button>
               </div>
-            )}
+              )}
+            </Show>
+
+            <Show when="signed-in">
+              <UserButton />
+            </Show>
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <button className="px-2.5 py-1.5 rounded bg-bg-surface border border-border-subtle text-[10px] font-mono font-bold uppercase text-text-primary">
+                  Sign In
+                </button>
+              </SignInButton>
+            </Show>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -202,28 +241,40 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          {isMod && (
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2.5 rounded text-accent-purple font-bold hover:bg-accent-purple/5"
-            >
-              Command Deck
-            </Link>
-          )}
-          {user && (
+          <Show when="signed-in">
+            {isMod && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2.5 rounded text-accent-purple font-bold hover:bg-accent-purple/5"
+              >
+                Command Deck
+              </Link>
+            )}
+          </Show>
+          <Show when="signed-in">
             <div className="flex items-center gap-3 pt-4 border-t border-border-subtle/50">
-              <img
-                src={user.avatar_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=user'}
-                alt="avatar"
-                className="w-10 h-10 rounded bg-bg-void border border-border-subtle p-0.5"
-              />
+              <UserButton />
               <div>
-                <p className="font-bold text-text-primary">{user.display_name || user.username}</p>
-                <p className="text-[10px] text-accent-cyan font-bold">{user.reputation_points} Reputation Points</p>
+                <p className="font-bold text-text-primary normal-case tracking-normal">{displayName}</p>
+                <p className="text-[10px] text-accent-cyan font-bold">{user?.reputation_points ?? 0} Reputation Points</p>
               </div>
             </div>
-          )}
+          </Show>
+          <Show when="signed-out">
+            <div className="flex gap-2 pt-4 border-t border-border-subtle/50">
+              <SignInButton mode="modal">
+                <button className="flex-1 rounded border border-border-subtle px-3 py-2 text-[10px] font-bold uppercase text-text-primary">
+                  Sign In
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="flex-1 rounded bg-accent-purple px-3 py-2 text-[10px] font-bold uppercase text-white">
+                  Join
+                </button>
+              </SignUpButton>
+            </div>
+          </Show>
         </div>
       )}
     </nav>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { Rajdhani, DM_Sans, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -23,8 +24,16 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "8x Sentinel - BGMI Account Trading Security Platform",
-  description: "The definitive trust infrastructure for the BGMI account trading ecosystem - community-powered scammer registry, reseller verification network, and reputation intelligence.",
-  keywords: ["BGMI", "BGMI Trade", "Scammer Registry", "BGMI Trusted Seller", "Esports Security", "8x Sentinel"],
+  description:
+    "The definitive trust infrastructure for the BGMI account trading ecosystem - community-powered scammer registry, reseller verification network, and reputation intelligence.",
+  keywords: [
+    "BGMI",
+    "BGMI Trade",
+    "Scammer Registry",
+    "BGMI Trusted Seller",
+    "Esports Security",
+    "8x Sentinel",
+  ],
 };
 
 export default function RootLayout({
@@ -37,10 +46,12 @@ export default function RootLayout({
       <body
         className={`${rajdhani.variable} ${dmSans.variable} ${jetbrainsMono.variable} font-body bg-bg-void text-text-primary antialiased min-h-screen flex flex-col`}
       >
-        <div className="flex-1 flex flex-col relative">
-          {children}
-        </div>
-        <Toaster position="bottom-right" theme="dark" closeButton />
+        <ConvexClientProvider>
+          <div className="flex-1 flex flex-col relative">
+            {children}
+          </div>
+          <Toaster position="bottom-right" theme="dark" closeButton />
+        </ConvexClientProvider>
       </body>
     </html>
   );

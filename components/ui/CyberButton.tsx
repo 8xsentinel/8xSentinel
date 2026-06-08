@@ -1,74 +1,49 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface CyberButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children: React.ReactNode;
-  variant?: 'cyan' | 'blue' | 'purple' | 'green' | 'red' | 'amber' | 'subtle';
+  variant?: 'cyan' | 'purple' | 'red' | 'green' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
-  glow?: boolean;
+  children: React.ReactNode;
 }
 
 export default function CyberButton({
-  children,
   variant = 'cyan',
   size = 'md',
   fullWidth = false,
-  glow = true,
-  className = '',
+  className,
+  children,
   ...props
 }: CyberButtonProps) {
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'cyan':
-        return 'bg-accent-cyan/10 border-accent-cyan/40 text-accent-cyan hover:bg-accent-cyan hover:text-bg-void hover:shadow-glow-cyan';
-      case 'blue':
-        return 'bg-accent-blue/10 border-accent-blue/40 text-text-primary hover:bg-accent-blue hover:text-bg-void hover:shadow-glow-blue';
-      case 'purple':
-        return 'bg-accent-purple/10 border-accent-purple/40 text-accent-purple hover:bg-accent-purple hover:text-bg-void hover:shadow-glow-purple';
-      case 'green':
-        return 'bg-accent-green/10 border-accent-green/40 text-accent-green hover:bg-accent-green hover:text-bg-void hover:shadow-glow-green';
-      case 'red':
-        return 'bg-accent-red/10 border-accent-red/40 text-accent-red hover:bg-accent-red hover:text-bg-void hover:shadow-glow-red';
-      case 'amber':
-        return 'bg-accent-amber/10 border-accent-amber/40 text-accent-amber hover:bg-accent-amber hover:text-bg-void hover:shadow-glow-amber';
-      case 'subtle':
-      default:
-        return 'bg-white/[0.02] border-border-subtle text-text-secondary hover:text-text-primary hover:bg-white/[0.06] hover:border-border-subtle/80';
-    }
+  const variantClasses = {
+    cyan: 'border-accent-cyan/40 text-accent-cyan bg-accent-cyan/5 hover:bg-accent-cyan/10 hover:border-accent-cyan/80 hover:shadow-[0_0_15px_rgba(6,182,212,0.3)]',
+    purple: 'border-accent-purple/40 text-accent-purple bg-accent-purple/5 hover:bg-accent-purple/10 hover:border-accent-purple/80 hover:shadow-[0_0_15px_rgba(139,92,246,0.3)]',
+    red: 'border-accent-red/40 text-accent-red bg-accent-red/5 hover:bg-accent-red/10 hover:border-accent-red/80 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]',
+    green: 'border-accent-green/40 text-accent-green bg-accent-green/5 hover:bg-accent-green/10 hover:border-accent-green/80 hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]',
+    ghost: 'border-border-subtle text-text-secondary bg-transparent hover:bg-white/[0.03] hover:text-text-primary',
   };
 
-  const getSizeStyles = () => {
-    switch (size) {
-      case 'sm':
-        return 'px-4 py-1.5 text-xs';
-      case 'lg':
-        return 'px-8 py-4 text-base tracking-wider';
-      case 'md':
-      default:
-        return 'px-6 py-2.5 text-sm';
-    }
+  const sizeClasses = {
+    sm: 'px-4 py-2 text-[10px] gap-1.5',
+    md: 'px-5 py-2.5 text-xs gap-2',
+    lg: 'px-8 py-3.5 text-sm gap-2.5',
   };
 
   return (
-    <motion.button
-      whileTap={{ scale: 0.97 }}
-      className={`
-        clip-cyber-btn border font-mono font-bold uppercase tracking-widest
-        transition-all duration-300 ease-out select-none outline-none focus:outline-none
-        ${getVariantStyles()}
-        ${getSizeStyles()}
-        ${fullWidth ? 'w-full' : 'w-auto'}
-        ${props.disabled ? 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-current hover:shadow-none' : ''}
-        ${className}
-      `}
+    <button
+      className={cn(
+        'inline-flex items-center justify-center font-mono font-bold uppercase tracking-widest border rounded transition-all duration-200 cursor-pointer select-none',
+        variantClasses[variant],
+        sizeClasses[size],
+        fullWidth && 'w-full',
+        className
+      )}
       {...props}
     >
-      <span className="relative z-10 flex items-center justify-center gap-2">
-        {children}
-      </span>
-    </motion.button>
+      {children}
+    </button>
   );
 }

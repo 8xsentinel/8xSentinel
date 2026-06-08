@@ -1,10 +1,10 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import { ShieldAlert, TrendingDown, DollarSign } from 'lucide-react';
-import { ScammerEntity } from '../../types';
-import GlowCard from './GlowCard';
 import RiskBadge from './RiskBadge';
-import TrustScoreRing from './TrustScoreRing';
+import { ScammerEntity } from '../../types';
+import { ShieldAlert, Phone, MessageCircle, CreditCard, Hash } from 'lucide-react';
 
 interface ScammerCardProps {
   entity: ScammerEntity;
@@ -12,76 +12,60 @@ interface ScammerCardProps {
 
 export default function ScammerCard({ entity }: ScammerCardProps) {
   const ids = entity.known_identifiers || {};
-  
-  // Format primary contact
-  const primaryTg = ids.telegram && ids.telegram.length > 0 ? `@${ids.telegram[0]}` : null;
-  const primaryPhone = ids.whatsapp && ids.whatsapp.length > 0 ? ids.whatsapp[0] : null;
-  const primaryUpi = ids.upi && ids.upi.length > 0 ? ids.upi[0] : null;
-  const primaryUid = ids.bgmi_uid && ids.bgmi_uid.length > 0 ? ids.bgmi_uid[0] : null;
 
   return (
-    <GlowCard glowColor={entity.risk_level === 'confirmed' ? 'red' : 'amber'}>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Scammer Details */}
-        <div className="space-y-3 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <RiskBadge risk={entity.risk_level} />
-            <h3 className="text-xl font-bold tracking-wide font-display text-text-primary">
-              {entity.canonical_name}
-            </h3>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-mono text-text-secondary">
-            {primaryTg && (
-              <div className="flex items-center gap-1.5 bg-white/[0.02] border border-border-subtle/40 px-2.5 py-1 rounded">
-                <span className="text-accent-cyan text-xs">TG:</span>
-                <span className="truncate">{primaryTg}</span>
-              </div>
-            )}
-            {primaryPhone && (
-              <div className="flex items-center gap-1.5 bg-white/[0.02] border border-border-subtle/40 px-2.5 py-1 rounded">
-                <span className="text-accent-cyan text-xs">WA:</span>
-                <span>{primaryPhone}</span>
-              </div>
-            )}
-            {primaryUpi && (
-              <div className="flex items-center gap-1.5 bg-white/[0.02] border border-border-subtle/40 px-2.5 py-1 rounded col-span-1 sm:col-span-2">
-                <span className="text-accent-cyan text-xs">UPI:</span>
-                <span className="truncate">{primaryUpi}</span>
-              </div>
-            )}
-            {primaryUid && (
-              <div className="flex items-center gap-1.5 bg-white/[0.02] border border-border-subtle/40 px-2.5 py-1 rounded">
-                <span className="text-accent-cyan text-xs">UID:</span>
-                <span>{primaryUid}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Stats and Profile Button */}
-        <div className="flex items-center justify-between md:justify-end gap-6 pt-4 md:pt-0 border-t border-border-subtle/30 md:border-t-0">
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-xs text-text-muted font-mono uppercase tracking-wider">Scam Impact</p>
-              <p className="text-lg font-bold font-mono text-accent-red flex items-center justify-end gap-0.5">
-                <span>₹{entity.total_amount_lost.toLocaleString('en-IN')}</span>
-              </p>
-              <p className="text-xs text-text-secondary font-mono">
-                {entity.report_count} report{entity.report_count !== 1 ? 's' : ''}
+    <Link href={`/scammer/${entity.id}`}>
+      <div className="group backdrop-blur-md bg-white/[0.02] border border-border-subtle hover:border-accent-red/30 rounded-xl p-5 transition-all duration-200 cursor-pointer hover:bg-accent-red/[0.02]">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-accent-red/10 border border-accent-red/20 flex items-center justify-center shrink-0">
+              <ShieldAlert className="w-5 h-5 text-accent-red" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-text-primary font-display uppercase tracking-wide truncate">
+                {entity.canonical_name}
+              </h3>
+              <p className="text-[10px] text-text-muted font-mono mt-0.5">
+                {entity.report_count} confirmed report{entity.report_count !== 1 ? 's' : ''}
               </p>
             </div>
-            <TrustScoreRing score={entity.trust_score} size={56} type="scammer" />
           </div>
-          
-          <Link
-            href={`/scammer/${entity.id}`}
-            className="flex items-center justify-center bg-transparent border border-accent-cyan/30 text-accent-cyan px-4 py-2 rounded text-sm font-medium hover:bg-accent-cyan/10 transition-colors duration-200"
-          >
-            View File →
-          </Link>
+          <RiskBadge risk={entity.risk_level} pulse={entity.risk_level === 'critical'} />
         </div>
+
+        {/* Identifiers grid */}
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {ids.phone?.slice(0, 1).map((p: string) => (
+            <div key={p} className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary truncate">
+              <Phone className="w-3 h-3 text-text-muted shrink-0" /> {p}
+            </div>
+          ))}
+          {ids.telegram?.slice(0, 1).map((t: string) => (
+            <div key={t} className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary truncate">
+              <MessageCircle className="w-3 h-3 text-text-muted shrink-0" /> @{t}
+            </div>
+          ))}
+          {ids.upi?.slice(0, 1).map((u: string) => (
+            <div key={u} className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary truncate">
+              <CreditCard className="w-3 h-3 text-text-muted shrink-0" /> {u}
+            </div>
+          ))}
+          {ids.bgmi_uid?.slice(0, 1).map((uid: string) => (
+            <div key={uid} className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary truncate">
+              <Hash className="w-3 h-3 text-text-muted shrink-0" /> {uid}
+            </div>
+          ))}
+        </div>
+
+        {entity.total_amount_lost > 0 && (
+          <div className="mt-3 pt-3 border-t border-border-subtle/30 flex items-center justify-between">
+            <span className="text-[10px] text-text-muted uppercase tracking-widest font-mono">Total Damage</span>
+            <span className="text-sm font-bold font-mono text-accent-red">
+              ₹{entity.total_amount_lost.toLocaleString('en-IN')}
+            </span>
+          </div>
+        )}
       </div>
-    </GlowCard>
+    </Link>
   );
 }

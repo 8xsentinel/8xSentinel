@@ -1,67 +1,35 @@
+'use client';
+
 import React from 'react';
-import { ShieldAlert, ShieldCheck, ShieldAlert as ShieldWarning, Skull, CheckCircle } from 'lucide-react';
-import { RiskLevel } from '../../types';
+import { cn } from '@/lib/utils';
+
+type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
 interface RiskBadgeProps {
-  risk: RiskLevel | 'verified_safe';
+  risk: RiskLevel;
   pulse?: boolean;
+  className?: string;
 }
 
-export default function RiskBadge({ risk, pulse = true }: RiskBadgeProps) {
-  const getConfig = () => {
-    switch (risk) {
-      case 'confirmed':
-        return {
-          bg: 'bg-red-500/10 border-red-500/20 text-red-400',
-          dot: 'bg-red-500',
-          icon: Skull,
-          label: '☠️ Confirmed Scammer'
-        };
-      case 'high':
-        return {
-          bg: 'bg-orange-500/10 border-orange-500/20 text-orange-400',
-          dot: 'bg-orange-500',
-          icon: ShieldAlert,
-          label: '🔴 High Risk'
-        };
-      case 'medium':
-        return {
-          bg: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-          dot: 'bg-amber-500',
-          icon: ShieldWarning,
-          label: '⚠️ Use Caution'
-        };
-      case 'low':
-        return {
-          bg: 'bg-lime-500/10 border-lime-500/20 text-lime-400',
-          dot: 'bg-lime-500',
-          icon: ShieldCheck,
-          label: '🟡 Clean Record'
-        };
-      case 'verified_safe':
-      default:
-        return {
-          bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-          dot: 'bg-emerald-500',
-          icon: CheckCircle,
-          label: '✅ Verified Reseller'
-        };
-    }
-  };
+const riskConfig: Record<RiskLevel, { label: string; classes: string }> = {
+  low:      { label: 'Low Risk',      classes: 'border-accent-green/40  text-accent-green  bg-accent-green/10'  },
+  medium:   { label: 'Medium Risk',   classes: 'border-accent-amber/40  text-accent-amber  bg-accent-amber/10'  },
+  high:     { label: 'High Risk',     classes: 'border-accent-red/40    text-accent-red    bg-accent-red/10'    },
+  critical: { label: 'CRITICAL',      classes: 'border-red-500/60       text-red-400       bg-red-500/15'       },
+};
 
-  const config = getConfig();
-  const Icon = config.icon;
-
+export default function RiskBadge({ risk, pulse = false, className }: RiskBadgeProps) {
+  const cfg = riskConfig[risk] ?? riskConfig.medium;
   return (
-    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-mono tracking-wide ${config.bg}`}>
-      {pulse && (
-        <span className="relative flex h-2 w-2">
-          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${config.dot}`}></span>
-          <span className={`relative inline-flex rounded-full h-2 w-2 ${config.dot}`}></span>
-        </span>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 border rounded px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest font-bold',
+        cfg.classes,
+        className
       )}
-      <Icon className="w-3.5 h-3.5" />
-      <span>{config.label}</span>
-    </div>
+    >
+      <span className={cn('w-1.5 h-1.5 rounded-full bg-current', pulse && 'animate-pulse')} />
+      {cfg.label}
+    </span>
   );
 }

@@ -1,80 +1,89 @@
+'use client';
+
 import React from 'react';
 
 interface TrustScoreRingProps {
-  score: number;
-  size?: number;
-  strokeWidth?: number;
-  showText?: boolean;
-  type?: 'scammer' | 'reseller';
+  score: number; // 0–100
+  size?: 'sm' | 'md' | 'lg' | number;
+  type?: 'trust' | 'scammer' | 'reseller';
 }
 
-export default function TrustScoreRing({
-  score,
-  size = 64,
-  strokeWidth = 6,
-  showText = true,
-  type = 'reseller'
-}: TrustScoreRingProps) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (score / 100) * circumference;
+const presetMap: Record<string, { r: number; stroke: number; viewBox: number; fontSize: string; labelSize: string }> = {
+  sm: { r: 18, stroke: 4, viewBox: 48, fontSize: '8px',  labelSize: '6px' },
+  md: { r: 28, stroke: 5, viewBox: 72, fontSize: '10px', labelSize: '7px' },
+  lg: { r: 40, stroke: 6, viewBox: 100, fontSize: '14px', labelSize: '9px' },
+};
 
-  // Get color based on score and type
-  const getColor = () => {
-    if (type === 'scammer') {
-      // For scammers, LOWER score is MORE dangerous (higher risk). Coded as danger/warning
-      if (score <= 15) return 'text-red-500'; // Highly dangerous
-      if (score <= 35) return 'text-orange-500';
-      if (score <= 60) return 'text-amber-500';
-      return 'text-lime-500'; // Low risk
-    } else {
-      // For resellers, HIGHER score is BETTER (more trusted)
-      if (score >= 90) return 'text-emerald-500';
-      if (score >= 70) return 'text-green-500';
-      if (score >= 50) return 'text-amber-500';
-      return 'text-red-500'; // Untrusted
-    }
-  };
+function getCfg(size: 'sm' | 'md' | 'lg' | number) {
+  if (typeof size === 'number') {
+    const r = size * 0.38;
+    const stroke = size * 0.06;
+    const fontSize = `${Math.floor(size * 0.14)}px`;
+    const labelSize = `${Math.floor(size * 0.09)}px`;
+    return { r, stroke, viewBox: size, fontSize, labelSize };
+  }
+  return presetMap[size] ?? presetMap.md;
+}
 
-  const ringColor = getColor();
+export default function TrustScoreRing({ score, size = 'md', type = 'trust' }: TrustScoreRingProps) {
+  const cfg = getCfg(size);
+  const circumference = 2 * Math.PI * cfg.r;
+  const offset = circumference - (Math.min(score, 100) / 100) * circumference;
+
+  // For scammer type: low score = most dangerous (red), high score = less dangerous (amber/green)
+  const color =
+    type === 'scammer'
+      ? score <= 30  ? '#ef4444'
+        : score <= 60 ? '#f59e0b'
+        : '#22c55e'
+      : score >= 80 ? '#22c55e'
+        : score >= 50 ? '#f59e0b'
+        : '#ef4444';
+
+  const cx = cfg.viewBox / 2;
+  const cy = cfg.viewBox / 2;
 
   return (
-    <div className="relative flex items-center justify-center font-mono" style={{ width: size, height: size }}>
-      <svg className="transform -rotate-90" width={size} height={size}>
-        {/* Background Circle */}
-        <circle
-          className="text-border-subtle"
-          strokeWidth={strokeWidth}
-          stroke="currentColor"
-          fill="transparent"
-          r={radius}
-          cx={size / 2}
-          cy={size / 2}
-        />
-        {/* Progress Circle */}
-        <circle
-          className={`transition-all duration-500 ease-out ${ringColor}`}
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          stroke="currentColor"
-          fill="transparent"
-          r={radius}
-          cx={size / 2}
-          cy={size / 2}
-        />
-      </svg>
-      {showText && (
-        <div className="absolute flex flex-col items-center justify-center text-center">
-          <span className="text-sm font-bold font-mono tracking-tighter" style={{ fontSize: size * 0.28 }}>
-            {score}
-          </span>
-          <span className="text-[8px] text-text-muted font-sans font-medium uppercase tracking-widest scale-75 -mt-0.5">
-            {type === 'scammer' ? 'Risk' : 'Trust'}
-          </span>
-        </div>
-      )}
-    </div>
+    <svg
+      width={cfg.viewBox}
+      height={cfg.viewBox}
+      viewBox={`0 0 ${cfg.viewBox} ${cfg.viewBox}`}
+      className="rotate-[-90deg]"
+    >
+      <circle cx={cx} cy={cy} r={cfg.r} fill="none" stroke="#1a2535" strokeWidth={cfg.stroke} />
+      <circle
+        cx={cx} cy={cy} r={cfg.r}
+        fill="none"
+        stroke={color}
+        strokeWidth={cfg.stroke}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+      />
+      <text
+        x={cx} y={cy}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={color}
+        fontSize={cfg.fontSize}
+        fontFamily="var(--font-mono), monospace"
+        fontWeight="bold"
+        style={{ transform: `rotate(90deg)`, transformOrigin: `${cx}px ${cy}px` }}
+      >
+        {score}
+      </text>
+      <text
+        x={cx} y={cy + parseInt(cfg.fontSize) + 2}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="#3d4f63"
+        fontSize={cfg.labelSize}
+        fontFamily="var(--font-mono), monospace"
+        style={{ transform: `rotate(90deg)`, transformOrigin: `${cx}px ${cy}px` }}
+      >
+        {type === 'scammer' ? 'RISK' : 'TRUST'}
+      </text>
+    </svg>
   );
 }
