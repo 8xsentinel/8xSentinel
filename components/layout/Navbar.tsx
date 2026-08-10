@@ -18,15 +18,20 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setUser(isSignedIn ? db.getCurrentUser() : null);
-    }, 0);
+    if (isSignedIn && clerkUser) {
+      const email = clerkUser.primaryEmailAddress?.emailAddress || '';
+      const username = clerkUser.username || clerkUser.firstName || 'operator';
+      const name = clerkUser.fullName || clerkUser.firstName || 'Sentinel Operator';
+      const syncedUser = db.syncClerkUser(email, username, name);
+      setUser(syncedUser);
+    } else {
+      setUser(db.getCurrentUser());
+    }
+  }, [isSignedIn, clerkUser, pathname]);
 
-    return () => window.clearTimeout(timer);
-  }, [isSignedIn, pathname]);
-
-  const handleRoleChange = (role: 'user' | 'moderator' | 'admin') => {
+  const handleRoleChange = (role: 'user' | 'seller' | 'regional_admin' | 'super_admin' | 'moderator' | 'admin') => {
     const updated = db.setCurrentUser(role);
+    setUser(updated);
     setUser(updated);
     setDropdownOpen(false);
     toast.success(`Access Clearance Updated: ${role.toUpperCase()}`, {
@@ -46,7 +51,8 @@ export default function Navbar() {
     { label: 'Verified resellers', href: '/resellers', icon: Users },
   ];
 
-  const isMod = user?.role === 'moderator' || user?.role === 'admin';
+  const isMod = user?.role === 'moderator' || user?.role === 'admin' || user?.role === 'regional_admin' || user?.role === 'super_admin';
+  const isSuperAdmin = user?.primary_email === '8xSentinel@gmail.com' || user?.role === 'super_admin';
   const displayName =
     clerkUser?.fullName ||
     clerkUser?.primaryEmailAddress?.emailAddress ||
@@ -112,45 +118,13 @@ export default function Navbar() {
           {/* Actions & Profile Selector */}
           <div className="hidden md:flex items-center gap-5">
             <Show when="signed-in">
-              {/* Override Terminal Switcher widget */}
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-4.5 py-2 rounded bg-bg-surface border border-border-subtle hover:border-accent-cyan/40 text-xs font-mono text-text-secondary transition-all select-none clip-cyber-btn"
-                >
-                  <ArrowRightLeft className="w-3.5 h-3.5 text-accent-cyan animate-pulse" />
-                  <span>Clearance: <span className="font-bold text-text-primary uppercase">{user?.role || 'User'}</span></span>
-                </button>
-
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-bg-surface border border-border-subtle rounded shadow-2xl py-2 z-50 font-mono text-xs clip-cyber">
-                    <div className="px-4 py-2 border-b border-border-subtle/30 text-[10px] text-text-muted uppercase tracking-widest font-bold">
-                      Terminal Override:
-                    </div>
-                    <button
-                      onClick={() => handleRoleChange('admin')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-accent-purple/10 text-accent-purple font-bold flex items-center justify-between"
-                    >
-                      <span>ADMIN DECK</span>
-                      {user?.role === 'admin' && <span className="text-accent-purple">✓</span>}
-                    </button>
-                    <button
-                      onClick={() => handleRoleChange('moderator')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-accent-cyan/10 text-accent-cyan font-bold flex items-center justify-between"
-                    >
-                      <span>MODERATOR</span>
-                      {user?.role === 'moderator' && <span className="text-accent-cyan">✓</span>}
-                    </button>
-                    <button
-                      onClick={() => handleRoleChange('user')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-accent-green/10 text-accent-green font-bold flex items-center justify-between"
-                    >
-                      <span>STANDARD OPERATOR</span>
-                      {user?.role === 'user' && <span className="text-accent-green">✓</span>}
-                    </button>
-                  </div>
-                )}
+            {/* Automatic Clearance Display (No manual selector) */}
+            <Show when="signed-in">
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded bg-bg-surface border border-border-subtle text-xs font-mono text-text-secondary select-none">
+                <Shield className="w-3.5 h-3.5 text-accent-cyan" />
+                <span>Clearance: <span className="font-bold text-accent-cyan uppercase">{user?.role?.replace('_', ' ') || 'USER'}</span></span>
               </div>
+            </Show>
             </Show>
 
             {/* Profile Avatar / Reputation */}
@@ -183,28 +157,9 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-3">
             <Show when="signed-in">
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="px-2.5 py-1.5 rounded bg-bg-surface border border-border-subtle text-[10px] font-mono text-text-secondary"
-              >
-                Clearance: <span className="font-bold text-text-primary uppercase">{user?.role || 'User'}</span>
-              </button>
-            </Show>
-            
-            <Show when="signed-in">
-              {dropdownOpen && (
-              <div className="absolute right-16 top-16 w-48 bg-bg-surface border border-border-subtle rounded shadow-2xl py-1.5 z-50 font-mono text-[10px] clip-cyber">
-                <button onClick={() => handleRoleChange('admin')} className="w-full text-left px-4 py-2 hover:bg-white/[0.03] text-accent-purple font-bold">
-                  ADMIN DECK
-                </button>
-                <button onClick={() => handleRoleChange('moderator')} className="w-full text-left px-4 py-2 hover:bg-white/[0.03] text-accent-cyan font-bold">
-                  MODERATOR
-                </button>
-                <button onClick={() => handleRoleChange('user')} className="w-full text-left px-4 py-2 hover:bg-white/[0.03] text-accent-green font-bold">
-                  STANDARD OPERATOR
-                </button>
+              <div className="px-2.5 py-1 rounded bg-bg-surface border border-border-subtle text-[10px] font-mono text-text-secondary">
+                Clearance: <span className="font-bold text-accent-cyan uppercase">{user?.role?.replace('_', ' ') || 'User'}</span>
               </div>
-              )}
             </Show>
 
             <Show when="signed-in">

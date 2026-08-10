@@ -9,7 +9,8 @@ import ScammerCard from '../../components/ui/ScammerCard';
 import SellerCard from '../../components/ui/SellerCard';
 import { db } from '../../lib/db';
 import { ScammerEntity, TrustedReseller } from '../../types';
-import { Filter, Info, ShieldCheck } from 'lucide-react';
+import { useUser, SignInButton, SignUpButton } from '@clerk/nextjs';
+import { Filter, Info, ShieldCheck, Lock } from 'lucide-react';
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -24,9 +25,18 @@ function SearchContent() {
   });
   const [loading, setLoading] = useState(false);
 
+  const { isSignedIn } = useUser();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    setCurrentUser(db.getCurrentUser());
+  }, []);
+
+  const isUserAuthenticated = isSignedIn || !!currentUser;
+
   useEffect(() => {
     setQuery(queryParam);
-    if (queryParam) {
+    if (queryParam && isUserAuthenticated) {
       setLoading(true);
       db.search(queryParam, typeParam).then((searchRes) => {
         setResults(searchRes as any);
@@ -35,7 +45,7 @@ function SearchContent() {
     } else {
       setResults({ scammers: [], resellers: [] });
     }
-  }, [queryParam, typeParam]);
+  }, [queryParam, typeParam, isUserAuthenticated]);
 
   const hasScammers = results.scammers.length > 0;
   const hasResellers = results.resellers.length > 0;
@@ -56,8 +66,37 @@ function SearchContent() {
         </p>
       </div>
 
-      {/* Persistent search box */}
-      <SearchBar initialQuery={queryParam} initialType={typeParam} placeholder="Verify phone, telegram, UPI, UID..." />
+      {/* Authentication Lock Screen for unauthenticated visitors */}
+      {!isUserAuthenticated ? (
+        <div className="backdrop-blur-md bg-white/[0.02] border border-accent-cyan/30 rounded-xl p-8 text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center mx-auto">
+            <Lock className="w-6 h-6 text-accent-cyan animate-pulse" />
+          </div>
+          <h2 className="text-xl font-bold font-display uppercase tracking-wider text-text-primary">
+            Authentication Required to Search
+          </h2>
+          <p className="text-xs text-text-secondary font-sans max-w-md mx-auto leading-relaxed">
+            All users must be logged in to query the Global Blacklist Registry and search seller credentials. Please sign in or create an account to proceed.
+          </p>
+          <div className="flex justify-center gap-3 pt-2">
+            <SignInButton mode="modal">
+              <button className="bg-accent-cyan text-bg-void font-bold font-mono px-5 py-2.5 rounded text-xs uppercase tracking-wider hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all">
+                Sign In to Search
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button className="bg-transparent border border-border-subtle hover:border-accent-cyan/40 text-text-primary font-mono px-5 py-2.5 rounded text-xs uppercase tracking-wider transition-all">
+                Create Account
+              </button>
+            </SignUpButton>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Persistent search box */}
+          <SearchBar initialQuery={queryParam} initialType={typeParam} placeholder="Verify phone, telegram, UPI, UID..." />
+        </>
+      )}
 
       {queryParam && (
         <div className="space-y-6">

@@ -15,8 +15,12 @@ export const db = {
     return mockDb.getCurrentUser();
   },
 
-  setCurrentUser: (role: 'user' | 'moderator' | 'admin' | null): Profile | null => {
-    return mockDb.setCurrentUser(role);
+  setCurrentUser: (role: 'user' | 'seller' | 'regional_admin' | 'super_admin' | 'moderator' | 'admin' | null): Profile | null => {
+    return mockDb.setCurrentUser(role as any);
+  },
+
+  syncClerkUser: (email: string, username: string, name: string): Profile => {
+    return mockDb.syncClerkUser(email, username, name);
   },
 
   registerUser: (username: string, display_name: string): Profile => {
@@ -42,7 +46,7 @@ export const db = {
   },
 
   // Search Engine
-  search: async (query: string, type: 'all' | 'phone' | 'telegram' | 'upi' | 'instagram' | 'bgmi_uid') => {
+  search: async (query: string, type: 'all' | 'phone' | 'telegram' | 'whatsapp_username' | 'upi' | 'instagram' | 'bank_account' | 'bgmi_uid') => {
     if (!isSupabaseConfigured() || !supabase) {
       return mockDb.search(query, type);
     }
@@ -173,6 +177,7 @@ export const db = {
           additional_identifiers: localReport.additional_identifiers,
           description: localReport.description,
           amount_lost: localReport.amount_lost,
+          victim_phone_number: localReport.victim_phone_number,
           currency: localReport.currency,
           incident_date: localReport.incident_date,
           scam_type: localReport.scam_type,
@@ -215,6 +220,64 @@ export const db = {
       }
     }
     return localReport;
+  },
+
+  voteReseller: async (resellerId: string, voteType: 'trust' | 'distrust'): Promise<TrustedReseller | null> => {
+    const localReseller = mockDb.voteReseller(resellerId, voteType);
+    
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const user = mockDb.getCurrentUser();
+        if (user) {
+          await supabase.from('reseller_votes').insert({
+            target_reseller_id: resellerId,
+            voter_id: user.id,
+            vote_type: voteType
+          });
+
+          if (localReseller) {
+            await supabase.from('trusted_resellers').update({
+              trust_score: localReseller.trust_score,
+              positive_feedback: localReseller.positive_feedback,
+              negative_feedback: localReseller.negative_feedback
+            }).eq('id', resellerId);
+          }
+        }
+      } catch (err) {
+        console.error("Supabase voteReseller failed. Error:", err);
+      }
+    }
+    return localReseller;
+  },
+
+  assignRegionalAdmin: async (userId: string, region: string): Promise<Profile | null> => {
+    const localProfile = mockDb.assignRegionalAdmin(userId, region);
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('profiles').update({
+          role: 'regional_admin',
+          region
+        }).eq('id', userId);
+      } catch (err) {
+        console.error("Supabase assignRegionalAdmin error:", err);
+      }
+    }
+    return localProfile;
+  },
+
+  verifySellerByRegionalAdmin: async (resellerId: string, regionalAdminId: string): Promise<TrustedReseller | null> => {
+    const localReseller = mockDb.verifySellerByRegionalAdmin(resellerId, regionalAdminId);
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('trusted_resellers').update({
+          verification_status: 'approved',
+          verified_by: regionalAdminId
+        }).eq('id', resellerId);
+      } catch (err) {
+        console.error("Supabase verifySellerByRegionalAdmin error:", err);
+      }
+    }
+    return localReseller;
   },
 
   // Scammer Profiles

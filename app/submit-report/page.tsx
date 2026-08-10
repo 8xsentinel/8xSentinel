@@ -26,6 +26,7 @@ export default function SubmitReportPage() {
   
   const [scamType, setScamType] = useState<ScamType>('fake_account_sale');
   const [amountLost, setAmountLost] = useState('');
+  const [victimPhoneNumber, setVictimPhoneNumber] = useState('');
   const [incidentDate, setIncidentDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   
@@ -86,6 +87,7 @@ export default function SubmitReportPage() {
       bgmi_uid: bgmiUid || undefined,
       scam_type: scamType,
       amount_lost: Number(amountLost) || 0,
+      victim_phone_number: victimPhoneNumber || undefined,
       incident_date: incidentDate,
       description,
       evidence_links: evidenceLinks
@@ -286,15 +288,29 @@ export default function SubmitReportPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-[10px] text-text-secondary uppercase tracking-widest block mb-1">Incident Date *</label>
-                <input
-                  value={incidentDate}
-                  onChange={(e) => setIncidentDate(e.target.value)}
-                  type="date"
-                  className="w-full bg-bg-surface border border-border-subtle focus:border-accent-cyan focus:outline-none rounded px-3 py-2 text-sm text-text-primary"
-                  required
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] text-text-secondary uppercase tracking-widest block mb-1">Incident Date *</label>
+                  <input
+                    value={incidentDate}
+                    onChange={(e) => setIncidentDate(e.target.value)}
+                    type="date"
+                    className="w-full bg-bg-surface border border-border-subtle focus:border-accent-cyan focus:outline-none rounded px-3 py-2 text-sm text-text-primary"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-text-secondary uppercase tracking-widest block mb-1">Victim Phone Number *</label>
+                  <input
+                    value={victimPhoneNumber}
+                    onChange={(e) => setVictimPhoneNumber(e.target.value)}
+                    type="tel"
+                    placeholder="e.g. +91 98765 43210"
+                    className="w-full bg-bg-surface border border-border-subtle focus:border-accent-cyan focus:outline-none rounded px-3 py-2 text-sm text-text-primary font-mono"
+                    required
+                  />
+                </div>
               </div>
 
               <div>

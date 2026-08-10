@@ -109,6 +109,23 @@ export default function ResellerProfilePage() {
     }
   };
 
+  const handlePeerVote = async (voteType: 'trust' | 'distrust') => {
+    if (!reseller) return;
+    const userSession = db.getCurrentUser();
+    if (!userSession) {
+      toast.error('Authentication required. Log in to vote on reseller trust.');
+      return;
+    }
+
+    const updated = await db.voteReseller(reseller.id, voteType);
+    if (updated) {
+      toast.success(voteType === 'trust' ? 'Trust vote recorded!' : 'Distrust vote recorded!');
+      await fetchResellerDetails();
+    } else {
+      toast.error('Failed to register vote.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-bg-void flex flex-col font-mono text-xs text-text-muted justify-center items-center">
@@ -286,6 +303,35 @@ export default function ResellerProfilePage() {
           </div>
 
           <div className="space-y-6">
+            {/* Peer Trust Vote Card */}
+            <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle hover:border-accent-cyan/30 rounded-xl p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-border-subtle/30 pb-2">
+                <h3 className="text-xs font-bold text-accent-cyan uppercase tracking-wider flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent-cyan" />
+                  Peer Reseller Verification
+                </h3>
+              </div>
+              <p className="text-[11px] text-text-secondary font-sans leading-relaxed">
+                Verified resellers can vote to vouch for this merchant's legitimacy or flag suspicion.
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handlePeerVote('trust')}
+                  className="flex-1 bg-accent-green/10 border border-accent-green/30 hover:bg-accent-green/20 text-accent-green font-bold font-mono py-2.5 rounded text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                >
+                  <span>👍 Vote Trusted</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePeerVote('distrust')}
+                  className="flex-1 bg-accent-red/10 border border-accent-red/30 hover:bg-accent-red/20 text-accent-red font-bold font-mono py-2.5 rounded text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                >
+                  <span>👎 Flag Distrust</span>
+                </button>
+              </div>
+            </div>
+
             {/* Contact details */}
             <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-5 space-y-4">
               <h3 className="text-xs font-bold text-accent-green uppercase tracking-wider border-b border-border-subtle/30 pb-2">

@@ -1,4 +1,4 @@
-export type UserRole = 'user' | 'moderator' | 'admin';
+export type UserRole = 'user' | 'seller' | 'regional_admin' | 'super_admin' | 'moderator' | 'admin';
 export type ScamReportStatus = 'pending' | 'approved' | 'rejected' | 'flagged';
 export type ScamType =
   | 'fake_account_sale'
@@ -26,6 +26,9 @@ export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   role: UserRole;
+  roles?: UserRole[];
+  primary_email?: string | null;
+  region?: string | null;
   is_banned: boolean;
   ban_reason: string | null;
   reputation_points: number;
@@ -46,8 +49,10 @@ export interface ScammerEntity {
   known_identifiers: {
     telegram?: string[];
     whatsapp?: string[];
+    whatsapp_username?: string[];
     upi?: string[];
     instagram?: string[];
+    bank_account?: string[];
     bgmi_uid?: string[];
   };
   is_verified_scammer: boolean;
@@ -69,6 +74,7 @@ export interface ScamReport {
   additional_identifiers: Record<string, any>;
   description: string;
   amount_lost: number;
+  victim_phone_number?: string | null;
   currency: string;
   incident_date: string;
   scam_type: ScamType;
@@ -110,6 +116,9 @@ export interface TrustedReseller {
   specializes_in: string[];
   badges: Array<{ type: 'top_seller' | 'verified' | 'trusted_og'; earned_at: string }>;
   price_range: string | null;
+  region?: string | null;
+  verified_by_regional_admin_id?: string | null;
+  verified_by_regional_admin_name?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -139,6 +148,14 @@ export interface ReportVote {
   report_id: string;
   voter_id: string;
   vote_type: 'upvote' | 'verify' | 'dispute';
+  created_at: string;
+}
+
+export interface ResellerTrustVote {
+  id: string;
+  voter_id: string;
+  target_reseller_id: string;
+  vote_type: 'trust' | 'distrust';
   created_at: string;
 }
 

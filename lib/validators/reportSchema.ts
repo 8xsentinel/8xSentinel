@@ -16,6 +16,7 @@ export const reportSchema = z.object({
   
   description: z.string().min(100, { message: 'Description must be at least 100 characters detailing the incident' }),
   amount_lost: z.coerce.number().min(0, { message: 'Amount lost must be 0 or more' }),
+  victim_phone_number: z.string().optional().or(z.literal('')),
   incident_date: z.string().refine(val => !isNaN(Date.parse(val)), { message: 'Must be a valid date' }),
   scam_type: z.enum([
     'fake_account_sale', 

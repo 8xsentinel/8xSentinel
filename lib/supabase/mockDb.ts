@@ -16,11 +16,28 @@ interface MockDatabase {
 
 const INITIAL_PROFILES: Profile[] = [
   {
+    id: 'user-super-admin',
+    username: '8xSentinel_ChiefAdmin',
+    display_name: '8xSentinel Chief Admin (Permanent)',
+    avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=chiefadmin',
+    role: 'super_admin',
+    roles: ['super_admin', 'admin'],
+    primary_email: '8xSentinel@gmail.com',
+    region: 'Global',
+    is_banned: false,
+    ban_reason: null,
+    reputation_points: 1000,
+    reports_submitted: 50,
+    created_at: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
+    last_seen: new Date().toISOString()
+  },
+  {
     id: 'user-1',
     username: 'agent_sentinel',
     display_name: 'Sentinel Operator',
     avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=sentinel',
     role: 'admin',
+    roles: ['admin'],
     is_banned: false,
     ban_reason: null,
     reputation_points: 250,
@@ -29,11 +46,29 @@ const INITIAL_PROFILES: Profile[] = [
     last_seen: new Date().toISOString()
   },
   {
+    id: 'user-dual-role',
+    username: 'apex_regional_vouch',
+    display_name: 'Apex Trades (Regional Admin & Seller)',
+    avatar_url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=apexreg',
+    role: 'regional_admin',
+    roles: ['seller', 'regional_admin'],
+    primary_email: 'apex_regional@sentinel.org',
+    region: 'North India',
+    is_banned: false,
+    ban_reason: null,
+    reputation_points: 480,
+    reports_submitted: 18,
+    created_at: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+    last_seen: new Date().toISOString()
+  },
+  {
     id: 'user-2',
     username: 'bgmi_trader_pro',
     display_name: 'BGMI Trader Pro',
     avatar_url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=trader',
-    role: 'user',
+    role: 'seller',
+    roles: ['seller'],
+    region: 'North India',
     is_banned: false,
     ban_reason: null,
     reputation_points: 40,
@@ -47,6 +82,7 @@ const INITIAL_PROFILES: Profile[] = [
     display_name: 'Esports Arbiter',
     avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=mod',
     role: 'moderator',
+    roles: ['moderator'],
     is_banned: false,
     ban_reason: null,
     reputation_points: 110,
@@ -338,7 +374,7 @@ export const db = {
     return db.currentUser;
   },
 
-  setCurrentUser: (role: 'user' | 'moderator' | 'admin' | null): Profile | null => {
+  setCurrentUser: (role: 'user' | 'seller' | 'regional_admin' | 'super_admin' | 'moderator' | 'admin' | null): Profile | null => {
     const db = getMockDb();
     if (!role) {
       db.currentUser = null;
@@ -348,6 +384,72 @@ export const db = {
     }
     saveMockDb(db);
     return db.currentUser;
+  },
+
+  syncClerkUser: (email: string, username: string, name: string): Profile => {
+    const dbData = getMockDb();
+    const cleanEmail = email.toLowerCase().trim();
+
+    // 1. Permanent Super Admin Check for 8xSentinel@gmail.com
+    if (cleanEmail === '8xsentinel@gmail.com') {
+      let superAdmin = dbData.profiles.find(p => p.primary_email?.toLowerCase() === '8xsentinel@gmail.com' || p.role === 'super_admin');
+      if (!superAdmin) {
+        superAdmin = {
+          id: 'user-super-admin',
+          username: '8xSentinel_ChiefAdmin',
+          display_name: '8xSentinel Chief Admin (Permanent)',
+          avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=chiefadmin',
+          role: 'super_admin',
+          roles: ['super_admin', 'admin'],
+          primary_email: '8xSentinel@gmail.com',
+          region: 'Global',
+          is_banned: false,
+          ban_reason: null,
+          reputation_points: 1000,
+          reports_submitted: 50,
+          created_at: new Date().toISOString(),
+          last_seen: new Date().toISOString()
+        };
+        dbData.profiles.push(superAdmin);
+      }
+      dbData.currentUser = superAdmin;
+      saveMockDb(dbData);
+      return superAdmin;
+    }
+
+    // 2. Check existing profile by email or username
+    let existing = dbData.profiles.find(
+      p => (p.primary_email && p.primary_email.toLowerCase() === cleanEmail) || p.username.toLowerCase() === username.toLowerCase()
+    );
+
+    if (existing) {
+      existing.last_seen = new Date().toISOString();
+      if (email && !existing.primary_email) existing.primary_email = email;
+      dbData.currentUser = existing;
+      saveMockDb(dbData);
+      return existing;
+    }
+
+    // 3. Create new profile automatically
+    const newProfile: Profile = {
+      id: `user-${Date.now()}`,
+      username: username || `user_${Date.now().toString().slice(-4)}`,
+      display_name: name || username || 'Community User',
+      avatar_url: `https://api.dicebear.com/7.x/identicon/svg?seed=${username || 'user'}`,
+      role: 'user',
+      roles: ['user'],
+      primary_email: email,
+      is_banned: false,
+      ban_reason: null,
+      reputation_points: 10,
+      reports_submitted: 0,
+      created_at: new Date().toISOString(),
+      last_seen: new Date().toISOString()
+    };
+    dbData.profiles.push(newProfile);
+    dbData.currentUser = newProfile;
+    saveMockDb(dbData);
+    return newProfile;
   },
 
   registerUser: (username: string, display_name: string): Profile => {
@@ -372,7 +474,7 @@ export const db = {
   },
 
   // Search
-  search: (query: string, type: 'all' | 'phone' | 'telegram' | 'upi' | 'instagram' | 'bgmi_uid') => {
+  search: (query: string, type: 'all' | 'phone' | 'telegram' | 'whatsapp_username' | 'upi' | 'instagram' | 'bank_account' | 'bgmi_uid') => {
     const db = getMockDb();
     const cleanQuery = query.trim().toLowerCase().replace(/^@/, '');
 
@@ -388,17 +490,21 @@ export const db = {
       
       const matchTg = ids.telegram?.some(v => v.toLowerCase().includes(cleanQuery));
       const matchWhatsapp = ids.whatsapp?.some(v => v.replace(/\D/g, '').includes(cleanQuery.replace(/\D/g, '')));
+      const matchWhatsappUser = ids.whatsapp_username?.some(v => v.toLowerCase().includes(cleanQuery));
       const matchUpi = ids.upi?.some(v => v.toLowerCase().includes(cleanQuery));
       const matchInsta = ids.instagram?.some(v => v.toLowerCase().includes(cleanQuery));
+      const matchBank = ids.bank_account?.some(v => v.toLowerCase().includes(cleanQuery));
       const matchUid = ids.bgmi_uid?.some(v => v.includes(cleanQuery));
 
       if (type === 'all') {
-        return matchName || matchTg || matchWhatsapp || matchUpi || matchInsta || matchUid;
+        return matchName || matchTg || matchWhatsapp || matchWhatsappUser || matchUpi || matchInsta || matchBank || matchUid;
       }
       if (type === 'telegram') return matchTg;
       if (type === 'phone') return matchWhatsapp;
+      if (type === 'whatsapp_username') return matchWhatsappUser || matchWhatsapp;
       if (type === 'upi') return matchUpi;
       if (type === 'instagram') return matchInsta;
+      if (type === 'bank_account') return matchBank;
       if (type === 'bgmi_uid') return matchUid;
       return false;
     });
@@ -416,7 +522,7 @@ export const db = {
         return matchStore || matchTg || matchWhatsapp || matchInsta;
       }
       if (type === 'telegram') return matchTg;
-      if (type === 'phone') return matchWhatsapp;
+      if (type === 'phone' || type === 'whatsapp_username') return matchWhatsapp;
       if (type === 'instagram') return matchInsta;
       return false;
     }).map(reseller => {
@@ -479,6 +585,7 @@ export const db = {
       additional_identifiers: reportData.additional_identifiers || {},
       description: reportData.description || '',
       amount_lost: Number(reportData.amount_lost) || 0,
+      victim_phone_number: reportData.victim_phone_number || null,
       currency: 'INR',
       incident_date: reportData.incident_date || new Date().toISOString().split('T')[0],
       scam_type: reportData.scam_type || 'other',
@@ -834,6 +941,58 @@ export const db = {
 
     saveMockDb(dbData);
     return report;
+  },
+
+  voteReseller: (resellerId: string, voteType: 'trust' | 'distrust'): TrustedReseller | null => {
+    const dbData = getMockDb();
+    const voter = dbData.currentUser;
+    if (!voter) return null;
+
+    const reseller = dbData.trusted_resellers.find(r => r.id === resellerId);
+    if (!reseller) return null;
+
+    if (voteType === 'trust') {
+      reseller.trust_score = Math.min(100, reseller.trust_score + 5);
+      reseller.positive_feedback++;
+    } else {
+      reseller.trust_score = Math.max(0, reseller.trust_score - 5);
+      reseller.negative_feedback++;
+    }
+    
+    saveMockDb(dbData);
+    return reseller;
+  },
+
+  assignRegionalAdmin: (userId: string, region: string): Profile | null => {
+    const dbData = getMockDb();
+    const profile = dbData.profiles.find(p => p.id === userId);
+    if (!profile) return null;
+
+    profile.role = 'regional_admin';
+    if (!profile.roles) profile.roles = ['seller'];
+    if (!profile.roles.includes('regional_admin')) {
+      profile.roles.push('regional_admin');
+    }
+    profile.region = region;
+    saveMockDb(dbData);
+    return profile;
+  },
+
+  verifySellerByRegionalAdmin: (resellerId: string, regionalAdminId: string): TrustedReseller | null => {
+    const dbData = getMockDb();
+    const admin = dbData.profiles.find(p => p.id === regionalAdminId);
+    const reseller = dbData.trusted_resellers.find(r => r.id === resellerId);
+
+    if (!reseller || !admin) return null;
+
+    reseller.verification_status = 'approved';
+    reseller.verified_by_regional_admin_id = admin.id;
+    reseller.verified_by_regional_admin_name = admin.display_name || admin.username;
+    reseller.verified_at = new Date().toISOString();
+    reseller.region = admin.region || reseller.region || 'North India';
+
+    saveMockDb(dbData);
+    return reseller;
   },
 
   moderateReseller: (resellerId: string, status: 'approved' | 'rejected' | 'suspended', rejectionReason?: string): TrustedReseller | null => {
