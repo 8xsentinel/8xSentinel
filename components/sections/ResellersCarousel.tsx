@@ -29,36 +29,39 @@ export default function ResellersCarousel() {
   }, []);
 
   return (
-    <section className="py-20 px-4 max-w-6xl mx-auto space-y-8 border-b border-border-subtle/30">
+    <section className="py-20 px-4 max-w-6xl mx-auto space-y-8 border-b border-white/5 font-sans">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-accent-green font-mono text-xs uppercase tracking-wider">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Reseller Verification Network</span>
+          <div className="badge badge-green">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>VERIFIED MERCHANTS</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold font-display uppercase tracking-wider text-text-primary">
-            Trusted Resellers
+          <h2 
+            className="text-3xl md:text-5xl font-extrabold uppercase tracking-tight text-white"
+            style={{ fontFamily: 'var(--font-h)' }}
+          >
+            Trusted <span className="g">Resellers</span>
           </h2>
-          <p className="text-text-secondary text-sm max-w-md">
-            Skip the risk. These sellers have verified trade histories and certified escrow compatibility.
+          <p className="text-text-secondary text-sm max-w-md font-sans leading-relaxed">
+            Eliminate counterparty risk. These merchants hold authenticated regional clearances and verified escrow track records.
           </p>
         </div>
 
         <Link
           href="/resellers"
-          className="inline-flex items-center gap-1.5 text-accent-green hover:text-accent-green/85 text-xs font-mono font-bold uppercase tracking-wider"
+          className="btn btn-outline py-2.5 px-5 text-xs inline-flex items-center gap-2 self-start sm:self-auto"
         >
           <span>View All Sellers</span>
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-3.5 h-3.5 text-accent-cyan" />
         </Link>
       </div>
 
       {resellers.length === 0 ? (
-        <div className="backdrop-blur-md bg-white/[0.01] border border-border-subtle rounded-xl p-8 text-center text-text-muted font-mono text-sm">
-          No verified resellers currently on record.
+        <div className="glass-panel rounded-2xl p-12 text-center text-text-muted text-sm font-sans">
+          No verified resellers currently listed.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {resellers.slice(0, 4).map(reseller => (
             <SellerCard key={reseller.id} reseller={reseller} />
           ))}

@@ -20,12 +20,11 @@ export default function SearchSection() {
     setLoading(true);
     setSearched(true);
     
-    // Simulate real-time API latency
     setTimeout(async () => {
       const searchRes = await db.search(query, type as any);
       setResults(searchRes as any);
       setLoading(false);
-    }, 450);
+    }, 400);
   };
 
   const hasScammers = results.scammers.length > 0;
@@ -33,29 +32,37 @@ export default function SearchSection() {
   const hasAnyResults = hasScammers || hasResellers;
 
   return (
-    <section className="py-20 px-4 max-w-6xl mx-auto space-y-10 border-b border-border-subtle/30">
+    <section className="py-20 px-4 max-w-6xl mx-auto space-y-10 border-b border-white/5 font-sans">
       <div className="text-center space-y-3">
-        <h2 className="text-3xl md:text-4xl font-bold font-display uppercase tracking-wider text-text-primary">
-          Verify Identifiers
+        <div className="badge badge-cyan mx-auto">
+          INSTANT RADAR
+        </div>
+        <h2 
+          className="text-3xl md:text-5xl font-extrabold uppercase tracking-tight text-white"
+          style={{ fontFamily: 'var(--font-h)' }}
+        >
+          Verify <span className="g">Identifiers</span>
         </h2>
-        <p className="text-text-secondary text-sm max-w-lg mx-auto">
-          Scan Phone numbers, UPI IDs, Telegram tags, Instagram pages, or BGMI UIDs before completing any transaction.
+        <p className="text-text-secondary text-sm max-w-lg mx-auto leading-relaxed">
+          Scan WhatsApp numbers, UPI IDs, Telegram usernames, or BGMI UIDs before confirming payments.
         </p>
       </div>
 
-      {/* Main tab search bar */}
+      {/* Main search bar */}
       <SearchBar onSearch={handleSearchSubmit} isLoading={loading} />
 
       {/* Results presentation */}
       {searched && !loading && (
-        <div className="space-y-6 max-w-4xl mx-auto pt-6">
+        <div className="space-y-6 max-w-4xl mx-auto pt-4">
           {!hasAnyResults && (
-            <div className="flex items-start gap-3 p-5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-sm">
-              <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-6 rounded-2xl glass-panel border border-emerald-500/25 text-emerald-400">
+              <ShieldCheck className="w-6 h-6 shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold">✅ No reports found in our registry.</p>
-                <p className="text-xs text-text-secondary mt-1 font-sans">
-                  This identifier looks clean — but always proceed with caution. Ensure you use official middlemen for high-tier accounts.
+                <p className="font-bold text-sm" style={{ fontFamily: 'var(--font-h)' }}>
+                  ✅ No malicious records found in our database.
+                </p>
+                <p className="text-xs text-text-secondary mt-1 font-sans leading-relaxed">
+                  This identifier currently has zero confirmed reports. Always exercise caution and verify authentic contact handles.
                 </p>
               </div>
             </div>
@@ -63,16 +70,22 @@ export default function SearchSection() {
 
           {hasAnyResults && (
             <div className="space-y-6">
-              <div className="flex items-center gap-2 text-xs uppercase font-mono text-text-muted tracking-widest border-b border-border-subtle/30 pb-2">
-                <Info className="w-4 h-4" />
-                <span>Search results ({results.scammers.length + results.resellers.length} matches found)</span>
+              <div 
+                className="flex items-center gap-2 text-xs uppercase font-bold text-text-muted tracking-wider border-b border-white/5 pb-2"
+                style={{ fontFamily: 'var(--font-h)' }}
+              >
+                <Info className="w-4 h-4 text-accent-cyan" />
+                <span>Search matches ({results.scammers.length + results.resellers.length} records found)</span>
               </div>
 
               {/* Scammers results */}
               {hasScammers && (
                 <div className="space-y-4">
-                  <h4 className="text-xs uppercase font-mono text-accent-red font-bold tracking-wider">
-                    ⚠️ Confirmed Threat Records:
+                  <h4 
+                    className="text-xs uppercase text-accent-red font-bold tracking-wider"
+                    style={{ fontFamily: 'var(--font-h)' }}
+                  >
+                    ⚠️ Blacklisted Records ({results.scammers.length}):
                   </h4>
                   <div className="space-y-4">
                     {results.scammers.map(scammer => (
@@ -85,8 +98,11 @@ export default function SearchSection() {
               {/* Resellers results */}
               {hasResellers && (
                 <div className="space-y-4 pt-4">
-                  <h4 className="text-xs uppercase font-mono text-accent-green font-bold tracking-wider">
-                    ✅ Verified Trusted Sellers matched:
+                  <h4 
+                    className="text-xs uppercase text-accent-green font-bold tracking-wider"
+                    style={{ fontFamily: 'var(--font-h)' }}
+                  >
+                    ✅ Verified Resellers ({results.resellers.length}):
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {results.resellers.map(reseller => (

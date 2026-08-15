@@ -20,8 +20,8 @@ const INITIAL_PROFILES: Profile[] = [
     username: '8xSentinel_ChiefAdmin',
     display_name: '8xSentinel Chief Admin (Permanent)',
     avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=chiefadmin',
-    role: 'super_admin',
-    roles: ['super_admin', 'admin'],
+    role: 'admin',
+    roles: ['admin', 'admin'],
     primary_email: '8xSentinel@gmail.com',
     region: 'Global',
     is_banned: false,
@@ -51,7 +51,7 @@ const INITIAL_PROFILES: Profile[] = [
     display_name: 'Apex Trades (Regional Admin & Seller)',
     avatar_url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=apexreg',
     role: 'regional_admin',
-    roles: ['seller', 'regional_admin'],
+    roles: ['verified_reseller', 'regional_admin'],
     primary_email: 'apex_regional@sentinel.org',
     region: 'North India',
     is_banned: false,
@@ -66,8 +66,8 @@ const INITIAL_PROFILES: Profile[] = [
     username: 'bgmi_trader_pro',
     display_name: 'BGMI Trader Pro',
     avatar_url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=trader',
-    role: 'seller',
-    roles: ['seller'],
+    role: 'verified_reseller',
+    roles: ['verified_reseller'],
     region: 'North India',
     is_banned: false,
     ban_reason: null,
@@ -81,8 +81,8 @@ const INITIAL_PROFILES: Profile[] = [
     username: 'mod_esports',
     display_name: 'Esports Arbiter',
     avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=mod',
-    role: 'moderator',
-    roles: ['moderator'],
+    role: 'regional_admin',
+    roles: ['regional_admin'],
     is_banned: false,
     ban_reason: null,
     reputation_points: 110,
@@ -374,7 +374,7 @@ export const db = {
     return db.currentUser;
   },
 
-  setCurrentUser: (role: 'user' | 'seller' | 'regional_admin' | 'super_admin' | 'moderator' | 'admin' | null): Profile | null => {
+  setCurrentUser: (role: 'user' | 'verified_reseller' | 'regional_admin' | 'admin' | null): Profile | null => {
     const db = getMockDb();
     if (!role) {
       db.currentUser = null;
@@ -392,15 +392,15 @@ export const db = {
 
     // 1. Permanent Super Admin Check for 8xSentinel@gmail.com
     if (cleanEmail === '8xsentinel@gmail.com') {
-      let superAdmin = dbData.profiles.find(p => p.primary_email?.toLowerCase() === '8xsentinel@gmail.com' || p.role === 'super_admin');
+      let superAdmin = dbData.profiles.find(p => p.primary_email?.toLowerCase() === '8xsentinel@gmail.com' || p.role === 'admin');
       if (!superAdmin) {
         superAdmin = {
           id: 'user-super-admin',
           username: '8xSentinel_ChiefAdmin',
           display_name: '8xSentinel Chief Admin (Permanent)',
           avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=chiefadmin',
-          role: 'super_admin',
-          roles: ['super_admin', 'admin'],
+          role: 'admin',
+          roles: ['admin', 'admin'],
           primary_email: '8xSentinel@gmail.com',
           region: 'Global',
           is_banned: false,
@@ -969,7 +969,7 @@ export const db = {
     if (!profile) return null;
 
     profile.role = 'regional_admin';
-    if (!profile.roles) profile.roles = ['seller'];
+    if (!profile.roles) profile.roles = ['verified_reseller'];
     if (!profile.roles.includes('regional_admin')) {
       profile.roles.push('regional_admin');
     }

@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
 import LinkInput from '../../components/ui/LinkInput';
 import { db } from '../../lib/db';
 import { reportSchema } from '../../lib/validators/reportSchema';
@@ -121,20 +119,23 @@ export default function SubmitReportPage() {
   ];
 
   return (
-    <>
-      <Navbar />
-      <main className="flex-1 max-w-3xl mx-auto py-12 px-4 space-y-8 font-mono">
-        
-        {/* Header Title */}
-        <div className="space-y-3">
-          <h1 className="text-3xl font-bold font-display uppercase tracking-wider text-text-primary flex items-center gap-2">
-            <ShieldAlert className="w-8 h-8 text-accent-red animate-pulse" />
-            <span>File Scammer Report</span>
-          </h1>
-          <p className="text-text-secondary text-xs font-sans font-medium">
-            Help protect the community. Fill details accurately. Refer to evidence links; files are never stored.
-          </p>
+    <div className="max-w-3xl mx-auto py-12 px-4 space-y-8 font-sans">
+      {/* Header Title */}
+      <div className="space-y-3">
+        <div className="badge badge-red">
+          FRAUD INCIDENT FILING
         </div>
+        <h1 
+          className="text-3xl md:text-5xl font-extrabold uppercase tracking-tight text-white flex items-center gap-3"
+          style={{ fontFamily: 'var(--font-h)' }}
+        >
+          <ShieldAlert className="w-8 h-8 text-accent-red animate-pulse" />
+          <span>File Scammer <span className="g-red">Report</span></span>
+        </h1>
+        <p className="text-text-secondary text-xs font-sans font-medium">
+          Help protect the community. Fill details accurately. Refer to evidence links; files are never stored.
+        </p>
+      </div>
 
         {/* Step Indicator Bar */}
         {step <= 4 && (
@@ -499,9 +500,6 @@ export default function SubmitReportPage() {
           )}
 
         </form>
-
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }

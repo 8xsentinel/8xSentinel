@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/lib/firebase/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { Profile, TrustedReseller } from "@/types";
 import { toast } from "sonner";
 
 export default function AdminDashboardPage() {
-  const { user: clerkUser, isLoaded } = useUser();
+  const { user, loading } = useAuth();
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [resellers, setResellers] = useState<TrustedReseller[]>([]);
   const [selectedRegion, setSelectedRegion] = useState("North India");
@@ -22,11 +22,11 @@ export default function AdminDashboardPage() {
     db.getResellers().then(setResellers);
   }, []);
 
-  if (!isLoaded) {
-    return <div className="container py-24 text-center font-mono">Loading admin command deck...</div>;
+  if (loading) {
+    return <div className="container py-24 text-center font-sans">Loading admin command deck...</div>;
   }
 
-  const isSuperAdmin = clerkUser?.primaryEmailAddress?.emailAddress === "8xSentinel@gmail.com" || currentUser?.role === "super_admin";
+  const isSuperAdmin = user?.email?.toLowerCase() === "8xsentinel@gmail.com" || currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const isRegionalAdmin = currentUser?.role === "regional_admin" || currentUser?.roles?.includes("regional_admin");
   const isAuthorized = isSuperAdmin || isRegionalAdmin || currentUser?.role === "admin" || currentUser?.role === "moderator";
 

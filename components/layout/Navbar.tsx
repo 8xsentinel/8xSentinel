@@ -1,282 +1,397 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { Show, SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
-import { Shield, Search, FileSpreadsheet, Users, Menu, X, ArrowRightLeft, ShieldAlert } from 'lucide-react';
-import { db } from '../../lib/db';
-import { Profile } from '../../types';
-import { toast } from 'sonner';
+import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Shield,
+  Search,
+  FileSpreadsheet,
+  Users,
+  Menu,
+  X,
+  ShieldAlert,
+  ShieldCheck,
+  ChevronDown,
+  ExternalLink,
+  ArrowRightLeft,
+} from "lucide-react";
+import AuthButton from "../auth/AuthButton";
+import { useAuth } from "../../lib/firebase/AuthContext";
+import { db } from "../../lib/db";
+import { Profile } from "../../types";
+import { toast } from "sonner";
 
 export default function Navbar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
-  const { user: clerkUser, isSignedIn } = useUser();
-  const [user, setUser] = useState<Profile | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { user } = useAuth();
+  const navRef = useRef<HTMLElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setUser(isSignedIn ? db.getCurrentUser() : null);
-    }, 0);
+    setUserProfile(user ? db.getCurrentUser() : null);
+  }, [user, pathname]);
 
-    return () => window.clearTimeout(timer);
-  }, [isSignedIn, pathname]);
+  // Scroll detection
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-  const handleRoleChange = (role: 'user' | 'moderator' | 'admin') => {
-    const updated = db.setCurrentUser(role);
-    setUser(updated);
-    setDropdownOpen(false);
-    toast.success(`Access Clearance Updated: ${role.toUpperCase()}`, {
-      description: 'System privileges modified for this session.',
-      style: {
-        background: '#070b16',
-        border: '1px solid #8b5cf6',
-        color: '#f1f5f9'
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+    setRoleDropdownOpen(false);
+  }, [pathname]);
+
+  // Prevent body scroll when mobile menu open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  // Reset mobile menu on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+        setMobileOpen(false);
       }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleRoleChange = (role: "user" | "verified_reseller" | "regional_admin" | "admin") => {
+    const updated = db.setCurrentUser(role);
+    setUserProfile(updated);
+    setRoleDropdownOpen(false);
+    toast.success(`Access Clearance Updated: ${role.toUpperCase()}`, {
+      description: "System privileges updated for this session.",
     });
-    router.refresh();
   };
 
   const navLinks = [
-    { label: 'Registry lookup', href: '/search', icon: Search },
-    { label: 'File Report', href: '/submit-report', icon: FileSpreadsheet },
-    { label: 'Verified resellers', href: '/resellers', icon: Users },
+    { label: "Registry Lookup", href: "/search", icon: Search },
+    { label: "File Report", href: "/submit-report", icon: FileSpreadsheet },
+    { label: "Verified Resellers", href: "/resellers", icon: Users },
   ];
 
-  const isMod = user?.role === 'moderator' || user?.role === 'admin';
-  const displayName =
-    clerkUser?.fullName ||
-    clerkUser?.primaryEmailAddress?.emailAddress ||
-    user?.display_name ||
-    user?.username ||
-    'Operator';
+  const isMod =
+    userProfile?.role === "regional_admin" ||
+    userProfile?.role === "admin";
+
+  const deskLinkStyle =
+    "text-gray-300 hover:text-white font-sans text-[13.5px] font-medium tracking-wide px-3.5 py-2 transition-all duration-200 inline-flex items-center gap-1.5 rounded-lg hover:bg-white/5";
+  const activeLinkStyle = "text-accent-cyan bg-accent-cyan/10 font-semibold border-b-2 border-accent-cyan";
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#03050c]/85 backdrop-blur-lg border-b border-border-subtle/70 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-18">
-          {/* Logo with cybersecurity gaming glow */}
-          <Link href="/" className="flex items-center gap-2.5 text-text-primary hover:text-accent-cyan transition-colors group">
-            <div className="relative">
-              <Shield className="w-8 h-8 text-accent-cyan fill-accent-cyan/5 transition-transform duration-300 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-accent-cyan/15 blur-md rounded-full -z-10 animate-pulse"></div>
-            </div>
-            <span className="font-display font-bold text-2xl tracking-widest uppercase">
-              8x<span className="text-accent-cyan text-glow-cyan">Sentinel</span>
-            </span>
-          </Link>
+    <>
+      <header
+        ref={navRef}
+        className="fixed top-0 left-0 right-0 z-[1000] transition-all duration-300"
+        style={{
+          background:
+            scrolled || mobileOpen
+              ? "rgba(8, 10, 15, 0.95)"
+              : "rgba(8, 10, 15, 0.6)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom:
+            scrolled || mobileOpen
+              ? "1px solid rgba(255, 255, 255, 0.08)"
+              : "1px solid rgba(255, 255, 255, 0.04)",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-[68px]">
+            {/* Brand Logo */}
+            <Link
+              href="/"
+              className="flex items-center gap-2.5 group transition-transform duration-200 hover:scale-[1.02]"
+            >
+              <div className="relative flex items-center justify-center">
+                <Shield className="w-7 h-7 text-accent-cyan transition-transform duration-300 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-accent-cyan/20 blur-md rounded-full -z-10 animate-pulse" />
+              </div>
+              <span
+                className="font-bold text-xl tracking-wider uppercase text-white"
+                style={{ fontFamily: "var(--font-h)" }}
+              >
+                8x<span className="g">SENTINEL</span>
+              </span>
+            </Link>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map(link => {
-              const Icon = link.icon;
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`
-                    flex items-center gap-2 px-3 py-2 rounded text-xs font-mono uppercase tracking-widest font-bold transition-all duration-200
-                    ${isActive 
-                      ? 'text-accent-cyan bg-accent-cyan/5 border-b-2 border-accent-cyan' 
-                      : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.02]'}
-                  `}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
+            {/* Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-1.5">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`${deskLinkStyle} ${
+                      isActive ? activeLinkStyle : ""
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 text-accent-cyan opacity-80" />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
 
-            <Show when="signed-in">
-              {isMod && (
+              {user && isMod && (
                 <Link
                   href="/admin"
-                  className={`
-                    flex items-center gap-2 px-3 py-2 rounded text-xs font-mono uppercase tracking-widest font-bold transition-all duration-200
-                    ${pathname.startsWith('/admin') 
-                      ? 'text-accent-purple bg-accent-purple/5 border-b-2 border-accent-purple' 
-                      : 'text-text-secondary hover:text-accent-purple hover:bg-white/[0.02]'}
-                  `}
+                  className={`${deskLinkStyle} ${
+                    pathname.startsWith("/admin")
+                      ? "text-accent-purple bg-accent-purple/10 border-b-2 border-accent-purple"
+                      : "text-accent-purple hover:bg-accent-purple/5"
+                  }`}
                 >
                   <ShieldAlert className="w-4 h-4 text-accent-purple animate-pulse" />
                   <span>Command Deck</span>
                 </Link>
               )}
-            </Show>
-          </div>
+            </nav>
 
-          {/* Actions & Profile Selector */}
-          <div className="hidden md:flex items-center gap-5">
-            <Show when="signed-in">
-              {/* Override Terminal Switcher widget */}
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-4.5 py-2 rounded bg-bg-surface border border-border-subtle hover:border-accent-cyan/40 text-xs font-mono text-text-secondary transition-all select-none clip-cyber-btn"
-                >
-                  <ArrowRightLeft className="w-3.5 h-3.5 text-accent-cyan animate-pulse" />
-                  <span>Clearance: <span className="font-bold text-text-primary uppercase">{user?.role || 'User'}</span></span>
-                </button>
+            {/* Right Actions & Auth */}
+            <div className="hidden lg:flex items-center gap-4">
+              {user && (
+                <div className="relative">
+                  <button
+                    onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-accent-cyan/40 text-[11px] font-mono text-gray-300 transition-all select-none"
+                  >
+                    <ArrowRightLeft className="w-3 h-3 text-accent-cyan" />
+                    <span>
+                      Clearance:{" "}
+                      <span className="font-bold text-accent-cyan uppercase">
+                        {userProfile?.role || "Operator"}
+                      </span>
+                    </span>
+                  </button>
 
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-bg-surface border border-border-subtle rounded shadow-2xl py-2 z-50 font-mono text-xs clip-cyber">
-                    <div className="px-4 py-2 border-b border-border-subtle/30 text-[10px] text-text-muted uppercase tracking-widest font-bold">
-                      Terminal Override:
+                  {roleDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-52 glass-panel rounded-xl border border-white/10 shadow-2xl py-2 z-50 font-mono text-xs">
+                      <div className="px-4 py-2 border-b border-white/5 text-[10px] text-text-muted uppercase tracking-widest font-bold">
+                        Clearance Override
+                      </div>
+                      <button
+                        onClick={() => handleRoleChange("admin")}
+                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-accent-purple font-bold flex items-center justify-between"
+                      >
+                        <span>ADMIN DECK</span>
+                        {userProfile?.role === "admin" && (
+                          <span className="text-accent-purple">✓</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleRoleChange("regional_admin")}
+                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-accent-cyan font-bold flex items-center justify-between"
+                      >
+                        <span>REGIONAL ADMIN</span>
+                        {userProfile?.role === "regional_admin" && (
+                          <span className="text-accent-cyan">✓</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleRoleChange("verified_reseller")}
+                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-accent-amber font-bold flex items-center justify-between"
+                      >
+                        <span>VERIFIED RESELLER</span>
+                        {userProfile?.role === "verified_reseller" && (
+                          <span className="text-accent-amber">✓</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleRoleChange("user")}
+                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-accent-green font-bold flex items-center justify-between"
+                      >
+                        <span>STANDARD USER</span>
+                        {userProfile?.role === "user" && (
+                          <span className="text-accent-green">✓</span>
+                        )}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleRoleChange('admin')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-accent-purple/10 text-accent-purple font-bold flex items-center justify-between"
-                    >
-                      <span>ADMIN DECK</span>
-                      {user?.role === 'admin' && <span className="text-accent-purple">✓</span>}
-                    </button>
-                    <button
-                      onClick={() => handleRoleChange('moderator')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-accent-cyan/10 text-accent-cyan font-bold flex items-center justify-between"
-                    >
-                      <span>MODERATOR</span>
-                      {user?.role === 'moderator' && <span className="text-accent-cyan">✓</span>}
-                    </button>
-                    <button
-                      onClick={() => handleRoleChange('user')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-accent-green/10 text-accent-green font-bold flex items-center justify-between"
-                    >
-                      <span>STANDARD OPERATOR</span>
-                      {user?.role === 'user' && <span className="text-accent-green">✓</span>}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </Show>
+                  )}
+                </div>
+              )}
 
-            {/* Profile Avatar / Reputation */}
-            <Show when="signed-in">
-              <div className="flex items-center gap-3 border-l border-border-subtle/60 pl-5">
-                <UserButton />
-                <div className="text-left font-mono">
-                  <p className="text-xs font-bold text-text-primary leading-tight truncate max-w-[130px]">{displayName}</p>
-                  <p className="text-[10px] text-accent-cyan font-bold">{user?.reputation_points ?? 0} REP</p>
+              <AuthButton />
+            </div>
+
+            {/* Mobile Menu Trigger */}
+            <div className="lg:hidden flex items-center gap-3">
+              <AuthButton />
+              <button
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors focus:outline-none"
+                aria-label="Toggle Navigation Menu"
+              >
+                {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Drawer Backdrop & Panel */}
+      <div
+        className={`ag-nav-mobile ag-drawer-container lg:hidden fixed inset-0 z-[9999] layer-overlay transition-all duration-300 ${
+          mobileOpen
+            ? "opacity-100 pointer-events-auto visible"
+            : "opacity-0 pointer-events-none invisible"
+        }`}
+      >
+        <div
+          className={`fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${
+            mobileOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={() => setMobileOpen(false)}
+        />
+
+        <div
+          ref={drawerRef}
+          className={`ag-drawer fixed top-0 right-0 bottom-0 w-[85%] sm:w-[340px] bg-[#080a0f]/95 backdrop-blur-2xl border-l border-white/10 z-[9999] overflow-y-auto px-6 py-6 transition-transform duration-300 ease-out flex flex-col justify-between shadow-[0_0_50px_rgba(0,0,0,0.8)] ${
+            mobileOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <div className="flex flex-col gap-4">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-2">
+              <Link
+                href="/"
+                className="flex items-center gap-2"
+                onClick={() => setMobileOpen(false)}
+              >
+                <Shield className="w-6 h-6 text-accent-cyan" />
+                <span
+                  className="font-bold text-lg tracking-wider uppercase text-white"
+                  style={{ fontFamily: "var(--font-h)" }}
+                >
+                  8x<span className="g">SENTINEL</span>
+                </span>
+              </Link>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="text-gray-400 hover:text-white p-1.5 rounded-full hover:bg-white/5 transition-colors focus:outline-none"
+                aria-label="Close menu"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="flex flex-col gap-1.5">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold transition-colors ${
+                      isActive
+                        ? "text-accent-cyan bg-accent-cyan/10"
+                        : "text-gray-300 hover:text-white hover:bg-white/5"
+                    }`}
+                    style={{ fontFamily: "var(--font-h)" }}
+                  >
+                    <Icon className="w-4 h-4 text-accent-cyan" />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
+
+              {user && isMod && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold text-accent-purple hover:bg-accent-purple/10 transition-colors"
+                  style={{ fontFamily: "var(--font-h)" }}
+                >
+                  <ShieldAlert className="w-4 h-4 text-accent-purple" />
+                  <span>Command Deck</span>
+                </Link>
+              )}
+            </div>
+
+            {/* Clearance selector for mobile */}
+            {user && (
+              <div className="pt-4 border-t border-white/10 space-y-2">
+                <span
+                  className="text-[10px] text-text-muted uppercase tracking-widest font-bold block"
+                  style={{ fontFamily: "var(--font-h)" }}
+                >
+                  Clearance Role
+                </span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    onClick={() => handleRoleChange("admin")}
+                    className={`py-1.5 px-2 rounded text-[10px] font-mono font-bold uppercase transition-all ${
+                      userProfile?.role === "admin"
+                        ? "bg-accent-purple/20 text-accent-purple border border-accent-purple/40"
+                        : "bg-white/5 text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Admin
+                  </button>
+                  <button
+                    onClick={() => handleRoleChange("regional_admin")}
+                    className={`py-1.5 px-2 rounded text-[10px] font-mono font-bold uppercase transition-all ${
+                      userProfile?.role === "regional_admin"
+                        ? "bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40"
+                        : "bg-white/5 text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Reg. Admin
+                  </button>
+                  <button
+                    onClick={() => handleRoleChange("verified_reseller")}
+                    className={`py-1.5 px-2 rounded text-[10px] font-mono font-bold uppercase transition-all ${
+                      userProfile?.role === "verified_reseller"
+                        ? "bg-accent-amber/20 text-accent-amber border border-accent-amber/40"
+                        : "bg-white/5 text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Reseller
+                  </button>
+                  <button
+                    onClick={() => handleRoleChange("user")}
+                    className={`py-1.5 px-2 rounded text-[10px] font-mono font-bold uppercase transition-all ${
+                      userProfile?.role === "user"
+                        ? "bg-accent-green/20 text-accent-green border border-accent-green/40"
+                        : "bg-white/5 text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    User
+                  </button>
                 </div>
               </div>
-            </Show>
-
-            <Show when="signed-out">
-              <div className="flex items-center gap-2">
-                <SignInButton mode="modal">
-                  <button className="h-9 rounded border border-border-subtle px-3 text-[10px] font-mono font-bold uppercase tracking-widest text-text-secondary transition-colors hover:border-accent-cyan/40 hover:text-text-primary">
-                    Sign In
-                  </button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <button className="h-9 rounded bg-accent-purple px-3 text-[10px] font-mono font-bold uppercase tracking-widest text-white transition-colors hover:bg-accent-pink">
-                    Join
-                  </button>
-                </SignUpButton>
-              </div>
-            </Show>
+            )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-3">
-            <Show when="signed-in">
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="px-2.5 py-1.5 rounded bg-bg-surface border border-border-subtle text-[10px] font-mono text-text-secondary"
-              >
-                Clearance: <span className="font-bold text-text-primary uppercase">{user?.role || 'User'}</span>
-              </button>
-            </Show>
-            
-            <Show when="signed-in">
-              {dropdownOpen && (
-              <div className="absolute right-16 top-16 w-48 bg-bg-surface border border-border-subtle rounded shadow-2xl py-1.5 z-50 font-mono text-[10px] clip-cyber">
-                <button onClick={() => handleRoleChange('admin')} className="w-full text-left px-4 py-2 hover:bg-white/[0.03] text-accent-purple font-bold">
-                  ADMIN DECK
-                </button>
-                <button onClick={() => handleRoleChange('moderator')} className="w-full text-left px-4 py-2 hover:bg-white/[0.03] text-accent-cyan font-bold">
-                  MODERATOR
-                </button>
-                <button onClick={() => handleRoleChange('user')} className="w-full text-left px-4 py-2 hover:bg-white/[0.03] text-accent-green font-bold">
-                  STANDARD OPERATOR
-                </button>
-              </div>
-              )}
-            </Show>
-
-            <Show when="signed-in">
-              <UserButton />
-            </Show>
-            <Show when="signed-out">
-              <SignInButton mode="modal">
-                <button className="px-2.5 py-1.5 rounded bg-bg-surface border border-border-subtle text-[10px] font-mono font-bold uppercase text-text-primary">
-                  Sign In
-                </button>
-              </SignInButton>
-            </Show>
-
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-text-secondary hover:text-text-primary"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+          {/* Drawer Footer */}
+          <div className="pt-6 border-t border-white/10 text-center">
+            <p className="text-[11px] text-text-muted">
+              8xSentinel Security Protocol v1.0
+            </p>
           </div>
         </div>
       </div>
-
-      {/* Mobile Menu Panel */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-bg-surface/95 border-b border-border-subtle/80 p-5 space-y-4 font-mono text-xs uppercase tracking-wider">
-          {navLinks.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2.5 rounded text-text-secondary hover:text-text-primary hover:bg-white/[0.02] font-bold"
-            >
-              {link.label}
-            </Link>
-          ))}
-          <Show when="signed-in">
-            {isMod && (
-              <Link
-                href="/admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 rounded text-accent-purple font-bold hover:bg-accent-purple/5"
-              >
-                Command Deck
-              </Link>
-            )}
-          </Show>
-          <Show when="signed-in">
-            <div className="flex items-center gap-3 pt-4 border-t border-border-subtle/50">
-              <UserButton />
-              <div>
-                <p className="font-bold text-text-primary normal-case tracking-normal">{displayName}</p>
-                <p className="text-[10px] text-accent-cyan font-bold">{user?.reputation_points ?? 0} Reputation Points</p>
-              </div>
-            </div>
-          </Show>
-          <Show when="signed-out">
-            <div className="flex gap-2 pt-4 border-t border-border-subtle/50">
-              <SignInButton mode="modal">
-                <button className="flex-1 rounded border border-border-subtle px-3 py-2 text-[10px] font-bold uppercase text-text-primary">
-                  Sign In
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="flex-1 rounded bg-accent-purple px-3 py-2 text-[10px] font-bold uppercase text-white">
-                  Join
-                </button>
-              </SignUpButton>
-            </div>
-          </Show>
-        </div>
-      )}
-    </nav>
+    </>
   );
 }

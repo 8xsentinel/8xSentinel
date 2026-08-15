@@ -1,31 +1,68 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
-import { Rajdhani, DM_Sans, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
+import { FirebaseAuthProvider } from "../lib/firebase/AuthContext";
+import Navbar from "../components/layout/Navbar";
+import Footer from "../components/layout/Footer";
+import SocialFloat from "../components/SocialFloat";
+import InitialPageLoader from "../components/InitialPageLoader";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const rajdhani = Rajdhani({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-display",
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-sans",
 });
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-body",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "700"],
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff",
   variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
-  title: "8x Sentinel - BGMI Account Trading Security Platform",
-  description: "The definitive trust infrastructure for the BGMI account trading ecosystem - community-powered scammer registry, reseller verification network, and reputation intelligence.",
-  keywords: ["BGMI", "BGMI Trade", "Scammer Registry", "BGMI Trusted Seller", "Esports Security", "8x Sentinel"],
+  metadataBase: new URL("https://8xsentinel.com"),
+  title: {
+    default: "8xSentinel — BGMI Central Scammer Registry & Trader Verification Network",
+    template: "%s | 8xSentinel",
+  },
+  description:
+    "The definitive trust protocol for the BGMI account trading ecosystem. Search phone numbers, Telegram IDs, UPI IDs, and verified reseller profiles before transacting.",
+  keywords: [
+    "BGMI scammer registry",
+    "BGMI account trust check",
+    "BGMI trusted seller list",
+    "BGMI verified resellers",
+    "BGMI trade safety",
+    "8x Sentinel",
+    "check BGMI scammer",
+    "BGMI UPI blacklist",
+    "BGMI telegram verification",
+  ],
+  openGraph: {
+    title: "8xSentinel — BGMI Central Scammer Registry & Trader Verification",
+    description:
+      "Definitive trust infrastructure for BGMI traders. Check blacklists and find verified merchants before dealing.",
+    url: "https://8xsentinel.com",
+    siteName: "8xSentinel",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "8xSentinel — BGMI Trading Security Protocol",
+      },
+    ],
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "8xSentinel — BGMI Trading Security Platform",
+    description:
+      "Definitive trust infrastructure for BGMI traders. Check blacklists and find verified merchants before dealing.",
+    images: ["/og-image.jpg"],
+  },
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -34,16 +71,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark font-sans">
       <body
-        className={`${rajdhani.variable} ${dmSans.variable} ${jetbrainsMono.variable} font-body bg-bg-void text-text-primary antialiased min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#080a0f] text-[#eaeaea] min-h-screen flex flex-col`}
       >
-        <ClerkProvider>
-          <div className="flex-1 flex flex-col relative">
-            {children}
+        <FirebaseAuthProvider>
+          <InitialPageLoader />
+          <Navbar />
+          <div className="pt-[68px] min-h-[calc(100vh-68px)] flex flex-col justify-between flex-1">
+            <main className="flex-grow">{children}</main>
+            <Footer />
           </div>
+          <SocialFloat />
           <Toaster position="bottom-right" theme="dark" closeButton />
-        </ClerkProvider>
+        </FirebaseAuthProvider>
       </body>
     </html>
   );

@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
 import { db } from '../../lib/db';
 import { resellerSchema } from '../../lib/validators/resellerSchema';
 import { toast } from 'sonner';
@@ -194,20 +192,23 @@ export default function ApplyVerificationPage() {
   ];
 
   return (
-    <>
-      <Navbar />
-      <main className="flex-1 max-w-3xl mx-auto py-12 px-4 space-y-8 font-mono text-xs">
-        
-        {/* Title Deck */}
-        <div className="space-y-3">
-          <h1 className="text-3xl font-bold font-display uppercase tracking-wider text-text-primary flex items-center gap-2">
-            <ShieldCheck className="w-8 h-8 text-accent-green animate-pulse" />
-            <span>Apply Reseller Verification</span>
-          </h1>
-          <p className="text-text-secondary text-xs font-sans font-medium">
-            Join the elite network. Build community trust, publish reviews, and showcase your certified escrow store status.
-          </p>
+    <div className="max-w-3xl mx-auto py-12 px-4 space-y-8 font-sans">
+      {/* Title Deck */}
+      <div className="space-y-3">
+        <div className="badge badge-green">
+          MERCHANT ONBOARDING
         </div>
+        <h1 
+          className="text-3xl md:text-5xl font-extrabold uppercase tracking-tight text-white flex items-center gap-3"
+          style={{ fontFamily: 'var(--font-h)' }}
+        >
+          <ShieldCheck className="w-8 h-8 text-accent-green animate-pulse" />
+          <span>Apply Reseller <span className="g">Verification</span></span>
+        </h1>
+        <p className="text-text-secondary text-xs font-sans font-medium">
+          Join the elite network. Build community trust, publish reviews, and showcase your certified escrow store status.
+        </p>
+      </div>
 
         {/* Dynamic step bar */}
         {step <= 4 && (
@@ -594,9 +595,6 @@ export default function ApplyVerificationPage() {
             </div>
           </div>
         )}
-
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }

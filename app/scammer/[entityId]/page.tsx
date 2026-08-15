@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Navbar from '../../../components/layout/Navbar';
-import Footer from '../../../components/layout/Footer';
 import RiskBadge from '../../../components/ui/RiskBadge';
 import TrustScoreRing from '../../../components/ui/TrustScoreRing';
 import EvidenceLink from '../../../components/ui/EvidenceLink';
@@ -52,33 +50,31 @@ export default function ScammerProfilePage() {
 
   if (!entity) {
     return (
-      <>
-        <Navbar />
-        <main className="flex-1 max-w-xl mx-auto py-20 px-4 text-center font-mono text-sm space-y-4">
-          <AlertCircle className="w-12 h-12 text-accent-red mx-auto" />
-          <h2 className="text-xl font-bold uppercase tracking-wider text-text-primary">Profile Not Found</h2>
-          <p className="text-text-secondary text-xs font-sans">
-            The requested scammer entity code is unregistered or under moderation clearance.
-          </p>
-          <button
-            onClick={() => router.push('/search')}
-            className="bg-transparent border border-border-subtle hover:border-accent-cyan/30 text-accent-cyan px-4 py-2 rounded text-xs"
-          >
-            &larr; Back to Search
-          </button>
-        </main>
-        <Footer />
-      </>
+      <div className="max-w-xl mx-auto py-20 px-4 text-center font-sans space-y-4">
+        <AlertCircle className="w-12 h-12 text-accent-red mx-auto" />
+        <h2 className="text-xl font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-h)' }}>
+          Profile Not Found
+        </h2>
+        <p className="text-text-secondary text-xs font-sans">
+          The requested scammer entity record is unregistered or under moderation review.
+        </p>
+        <button
+          onClick={() => router.push('/search')}
+          className="btn btn-outline py-2 px-4 text-xs"
+        >
+          &larr; Back to Search
+        </button>
+      </div>
     );
   }
 
   const getRiskBannerClass = () => {
     switch (entity.risk_level) {
-      case 'confirmed': return 'bg-accent-red';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-accent-amber';
-      case 'low': return 'bg-lime-500';
-      default: return 'bg-accent-cyan';
+      case 'confirmed': return 'bg-accent-red text-white';
+      case 'high': return 'bg-orange-500 text-white';
+      case 'medium': return 'bg-accent-amber text-black';
+      case 'low': return 'bg-lime-500 text-black';
+      default: return 'bg-accent-cyan text-black';
     }
   };
 
@@ -86,14 +82,11 @@ export default function ScammerProfilePage() {
   const knownIds = entity.known_identifiers || {};
 
   return (
-    <>
-      <Navbar />
-      <main className="flex-1 max-w-5xl mx-auto py-12 px-4 space-y-8 font-mono">
-        
-        {/* Risk Banner Alert */}
-        <div className={`w-full py-2 px-4 rounded text-center text-xs font-bold uppercase tracking-widest text-bg-void ${bannerClass}`}>
-          ⚠️ Blacklist File Status: {entity.risk_level} threat level · Extreme Precaution Advised
-        </div>
+    <div className="max-w-5xl mx-auto py-12 px-4 space-y-8 font-sans">
+      {/* Risk Banner Alert */}
+      <div className={`w-full py-2.5 px-4 rounded-xl text-center text-xs font-bold uppercase tracking-wider ${bannerClass}`} style={{ fontFamily: 'var(--font-h)' }}>
+        ⚠️ Blacklist File Status: {entity.risk_level} threat level · Extreme Precaution Advised
+      </div>
 
         {/* Identity Panel & Risk Ring split */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -317,9 +310,6 @@ export default function ScammerProfilePage() {
             })}
           </div>
         </div>
-
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }

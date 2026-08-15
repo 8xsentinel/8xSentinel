@@ -2,8 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Navbar from '../../../components/layout/Navbar';
-import Footer from '../../../components/layout/Footer';
 import EvidenceLink from '../../../components/ui/EvidenceLink';
 import RiskBadge from '../../../components/ui/RiskBadge';
 import { db } from '../../../lib/db';
@@ -60,23 +58,19 @@ export default function ReportDetailPage() {
 
   if (!report) {
     return (
-      <>
-        <Navbar />
-        <main className="flex-1 max-w-xl mx-auto py-20 px-4 text-center font-mono text-sm space-y-4">
-          <AlertOctagon className="w-12 h-12 text-accent-red mx-auto" />
-          <h2 className="text-xl font-bold uppercase tracking-wider text-text-primary">Record not found</h2>
-          <p className="text-text-secondary text-xs font-sans">
-            The referenced serial ID is invalid, rejected, or restricted under encryption protocols.
-          </p>
-          <button
-            onClick={() => router.push('/search')}
-            className="bg-transparent border border-border-subtle hover:border-accent-cyan/30 text-accent-cyan px-4 py-2 rounded text-xs"
-          >
-            &larr; Back to Search
-          </button>
-        </main>
-        <Footer />
-      </>
+      <div className="max-w-xl mx-auto py-20 px-4 text-center font-sans space-y-4">
+        <AlertOctagon className="w-12 h-12 text-accent-red mx-auto" />
+        <h2 className="text-xl font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-h)' }}>Record not found</h2>
+        <p className="text-text-secondary text-xs font-sans">
+          The referenced serial ID is invalid, rejected, or restricted under moderation protocols.
+        </p>
+        <button
+          onClick={() => router.push('/search')}
+          className="btn btn-outline py-2 px-4 text-xs"
+        >
+          &larr; Back to Search
+        </button>
+      </div>
     );
   }
 
@@ -89,17 +83,16 @@ export default function ReportDetailPage() {
   });
 
   return (
-    <>
-      <Navbar />
-      <main className="flex-1 max-w-4xl mx-auto py-12 px-4 space-y-8 font-mono">
-        {/* Navigation Link */}
-        <Link 
-          href="/search" 
-          className="inline-flex items-center gap-1.5 text-text-secondary hover:text-accent-cyan text-xs uppercase tracking-wider transition-colors duration-200"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Return to Registry</span>
-        </Link>
+    <div className="max-w-4xl mx-auto py-12 px-4 space-y-8 font-sans">
+      {/* Navigation Link */}
+      <Link 
+        href="/search" 
+        className="inline-flex items-center gap-2 text-text-secondary hover:text-accent-cyan text-xs uppercase tracking-wider font-bold transition-colors"
+        style={{ fontFamily: 'var(--font-h)' }}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span>Return to Registry</span>
+      </Link>
 
         {/* Header Alert Card */}
         <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -267,12 +260,8 @@ export default function ReportDetailPage() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
-
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }

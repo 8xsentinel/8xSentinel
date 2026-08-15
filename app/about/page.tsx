@@ -2,42 +2,67 @@ import { ShieldCheck, Users, ShieldAlert } from "lucide-react";
 
 export default function AboutPage() {
   return (
-    <div className="container py-12 md:py-24 max-w-4xl mx-auto space-y-16">
+    <div className="max-w-4xl mx-auto py-12 md:py-20 px-4 space-y-16 font-sans">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">About 8xSentinel</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          The definitive trust infrastructure for the account trading ecosystem.
+        <div className="badge badge-cyan mx-auto">
+          ABOUT 8xSENTINEL
+        </div>
+        <h1 
+          className="text-4xl md:text-6xl font-extrabold uppercase tracking-tight text-white"
+          style={{ fontFamily: 'var(--font-h)' }}
+        >
+          Securing the <span className="g">Gaming Guild</span>
+        </h1>
+        <p className="text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
+          The definitive trust infrastructure for the BGMI account and digital skins trading ecosystem.
         </p>
       </div>
 
-      <div className="prose prose-slate dark:prose-invert max-w-none space-y-6">
-        <p className="text-lg leading-relaxed">
-          The account trading community has historically been plagued by bad actors, impersonators, and scammers. 
-          <strong>8xSentinel</strong> was built to solve this. We are a community-driven trust and verification platform that provides a central registry of trusted resellers and known scammers.
+      <div className="glass-panel rounded-2xl p-8 space-y-6 leading-relaxed text-text-secondary text-base">
+        <p>
+          The gaming trading community has historically been plagued by bad actors, impersonators, and fraudulent escrow runners. 
+          <strong className="text-white font-bold"> 8xSentinel</strong> was built to solve this once and for all. We are a community-powered trust and blacklist registry that provides transparent, real-time threat intelligence on active scammers and spotlights authenticated merchants.
+        </p>
+        <p>
+          Our platform combines automated identifier clustering, community dispute filings, and experienced human moderation to protect buyer capital and restore honor to digital trading.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8 pt-8 border-t">
-        <div className="space-y-3">
-          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-            <ShieldCheck className="w-6 h-6 text-primary" />
+      <div className="grid md:grid-cols-3 gap-6 pt-4">
+        <div className="glass-panel card-glow-cyan rounded-2xl p-6 space-y-3 transition-all duration-300 hover:-translate-y-1">
+          <div className="w-12 h-12 rounded-xl bg-accent-cyan/10 border border-accent-cyan/25 flex items-center justify-center">
+            <ShieldCheck className="w-6 h-6 text-accent-cyan" />
           </div>
-          <h3 className="text-xl font-semibold">Verification System</h3>
-          <p className="text-muted-foreground">Our rigorous KYC process ensures that sellers are who they claim to be, tying their digital identity to real-world credentials.</p>
+          <h3 className="text-lg font-bold text-white uppercase tracking-wide" style={{ fontFamily: 'var(--font-h)' }}>
+            Verification System
+          </h3>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            Multi-point merchant audits ensure sellers are genuine, binding contact coordinates and regional vouch clearances.
+          </p>
         </div>
-        <div className="space-y-3">
-          <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center">
-            <ShieldAlert className="w-6 h-6 text-destructive" />
+
+        <div className="glass-panel card-glow-red rounded-2xl p-6 space-y-3 transition-all duration-300 hover:-translate-y-1">
+          <div className="w-12 h-12 rounded-xl bg-accent-red/10 border border-accent-red/25 flex items-center justify-center">
+            <ShieldAlert className="w-6 h-6 text-accent-red" />
           </div>
-          <h3 className="text-xl font-semibold">Scam Protection</h3>
-          <p className="text-muted-foreground">A centralized database of reported scams allows buyers to verify a seller's history before initiating a transaction.</p>
+          <h3 className="text-lg font-bold text-white uppercase tracking-wide" style={{ fontFamily: 'var(--font-h)' }}>
+            Scam Blacklist
+          </h3>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            A centralized database of verified fraud filings allows players to cross-check identifiers before making payments.
+          </p>
         </div>
-        <div className="space-y-3">
-          <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-            <Users className="w-6 h-6 text-blue-500" />
+
+        <div className="glass-panel card-glow-green rounded-2xl p-6 space-y-3 transition-all duration-300 hover:-translate-y-1">
+          <div className="w-12 h-12 rounded-xl bg-accent-green/10 border border-accent-green/25 flex items-center justify-center">
+            <Users className="w-6 h-6 text-accent-green" />
           </div>
-          <h3 className="text-xl font-semibold">Community Moderation</h3>
-          <p className="text-muted-foreground">Reports and verification applications are reviewed by trusted community administrators to ensure fairness and accuracy.</p>
+          <h3 className="text-lg font-bold text-white uppercase tracking-wide" style={{ fontFamily: 'var(--font-h)' }}>
+            Community Moderation
+          </h3>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            Disputes and applications are reviewed by regional moderators to maintain accurate, impartial trust records.
+          </p>
         </div>
       </div>
     </div>

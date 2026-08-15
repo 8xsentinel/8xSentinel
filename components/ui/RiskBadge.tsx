@@ -12,10 +12,10 @@ interface RiskBadgeProps {
 }
 
 const riskConfig: Record<RiskLevel, { label: string; classes: string }> = {
-  low:      { label: 'Low Risk',      classes: 'border-accent-green/40  text-accent-green  bg-accent-green/10'  },
-  medium:   { label: 'Medium Risk',   classes: 'border-accent-amber/40  text-accent-amber  bg-accent-amber/10'  },
-  high:     { label: 'High Risk',     classes: 'border-accent-red/40    text-accent-red    bg-accent-red/10'    },
-  critical: { label: 'CRITICAL',      classes: 'border-red-500/60       text-red-400       bg-red-500/15'       },
+  low:      { label: 'Low Risk',      classes: 'badge-green' },
+  medium:   { label: 'Medium Risk',   classes: 'badge-orange' },
+  high:     { label: 'High Risk',     classes: 'badge-red' },
+  critical: { label: 'CRITICAL THREAT', classes: 'badge-red shadow-[0_0_12px_rgba(239,68,68,0.3)]' },
 };
 
 export default function RiskBadge({ risk, pulse = false, className }: RiskBadgeProps) {
@@ -23,12 +23,12 @@ export default function RiskBadge({ risk, pulse = false, className }: RiskBadgeP
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 border rounded px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest font-bold',
+        'badge text-[10px] tracking-wider',
         cfg.classes,
         className
       )}
     >
-      <span className={cn('w-1.5 h-1.5 rounded-full bg-current', pulse && 'animate-pulse')} />
+      <span className={cn('w-1.5 h-1.5 rounded-full bg-current', (pulse || risk === 'critical') && 'animate-ping')} />
       {cfg.label}
     </span>
   );

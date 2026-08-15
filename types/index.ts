@@ -1,4 +1,4 @@
-export type UserRole = 'user' | 'seller' | 'regional_admin' | 'super_admin' | 'moderator' | 'admin';
+export type UserRole = 'user' | 'verified_reseller' | 'regional_admin' | 'admin';
 export type ScamReportStatus = 'pending' | 'approved' | 'rejected' | 'flagged';
 export type ScamType =
   | 'fake_account_sale'

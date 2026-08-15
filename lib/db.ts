@@ -15,7 +15,7 @@ export const db = {
     return mockDb.getCurrentUser();
   },
 
-  setCurrentUser: (role: 'user' | 'seller' | 'regional_admin' | 'super_admin' | 'moderator' | 'admin' | null): Profile | null => {
+  setCurrentUser: (role: 'user' | 'verified_reseller' | 'regional_admin' | 'admin' | null): Profile | null => {
     return mockDb.setCurrentUser(role as any);
   },
 

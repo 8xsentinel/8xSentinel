@@ -6,22 +6,23 @@ import { cn } from '@/lib/utils';
 interface GlowCardProps {
   children: React.ReactNode;
   className?: string;
-  glowColor?: 'cyan' | 'purple' | 'red' | 'green' | 'none';
+  glowColor?: 'cyan' | 'purple' | 'red' | 'green' | 'gold' | 'none';
 }
 
 export default function GlowCard({ children, className, glowColor = 'cyan' }: GlowCardProps) {
   const glowClasses = {
-    cyan: 'hover:border-accent-cyan/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.08)]',
-    purple: 'hover:border-accent-purple/30 hover:shadow-[0_0_30px_rgba(139,92,246,0.08)]',
-    red: 'hover:border-accent-red/30 hover:shadow-[0_0_30px_rgba(239,68,68,0.08)]',
-    green: 'hover:border-accent-green/30 hover:shadow-[0_0_30px_rgba(34,197,94,0.08)]',
+    cyan: 'card-glow-cyan hover:border-accent-cyan/40',
+    purple: 'hover:border-accent-purple/40 hover:shadow-[0_0_25px_rgba(139,92,246,0.15)]',
+    red: 'card-glow-red hover:border-accent-red/40',
+    green: 'card-glow-green hover:border-accent-green/40',
+    gold: 'card-glow-gold hover:border-[#ffd700]/40',
     none: '',
   };
 
   return (
     <div
       className={cn(
-        'backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl transition-all duration-300',
+        'glass-panel rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1',
         glowClasses[glowColor],
         className
       )}

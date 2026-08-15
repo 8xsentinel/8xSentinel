@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Search, X, Shield, Phone, Send, MessageSquare, 
-  CreditCard, Landmark, Gamepad2, AtSign 
+  CreditCard, Landmark, Gamepad2 
 } from 'lucide-react';
 
 const InstagramIcon = (props: React.ComponentProps<'svg'>) => (
@@ -44,14 +44,14 @@ interface SearchBarProps {
 }
 
 const typeOptions: { value: SearchType; label: string; icon: any; placeholder: string }[] = [
-  { value: 'all',               label: 'ALL',                icon: Shield,      placeholder: 'Query WhatsApp, Telegram, UPI, Bank Account, BGMI UID...' },
-  { value: 'phone',             label: 'WhatsApp Number',    icon: Phone,       placeholder: 'Enter 10-digit WhatsApp phone number (e.g. 9876543210)...' },
-  { value: 'telegram',          label: 'Telegram Username',  icon: Send,        placeholder: 'Enter Telegram username (e.g. @rohan_deals)...' },
-  { value: 'whatsapp_username', label: 'WhatsApp Username',  icon: MessageSquare,placeholder: 'Enter WhatsApp display username or alias...' },
-  { value: 'upi',               label: 'UPI ID',             icon: CreditCard,  placeholder: 'Enter VPA / UPI ID (e.g. name@ybl, name@upi)...' },
-  { value: 'instagram',         label: 'Instagram ID',       icon: InstagramIcon,placeholder: 'Enter Instagram handle (e.g. @rohan_store)...' },
-  { value: 'bank_account',      label: 'Bank Account No.',   icon: Landmark,    placeholder: 'Enter Bank Account number or IFSC code...' },
-  { value: 'bgmi_uid',          label: 'BGMI Ingame ID',     icon: Gamepad2,    placeholder: 'Enter 10-digit BGMI Character UID (e.g. 5567891234)...' },
+  { value: 'all',               label: 'ALL',                icon: Shield,      placeholder: 'Query Phone, Telegram, UPI, Bank Account, BGMI UID...' },
+  { value: 'phone',             label: 'WhatsApp Phone',     icon: Phone,       placeholder: 'Enter 10-digit phone number (e.g. 9876543210)...' },
+  { value: 'telegram',          label: 'Telegram Username',  icon: Send,        placeholder: 'Enter Telegram username (e.g. @trader_deals)...' },
+  { value: 'whatsapp_username', label: 'WhatsApp Name',      icon: MessageSquare,placeholder: 'Enter WhatsApp display username or alias...' },
+  { value: 'upi',               label: 'UPI ID',             icon: CreditCard,  placeholder: 'Enter VPA / UPI ID (e.g. merchant@upi, user@ybl)...' },
+  { value: 'instagram',          label: 'Instagram Handle',   icon: InstagramIcon,placeholder: 'Enter Instagram handle (e.g. @trader_store)...' },
+  { value: 'bank_account',      label: 'Bank Account / IFSC',icon: Landmark,    placeholder: 'Enter Bank Account number or IFSC code...' },
+  { value: 'bgmi_uid',          label: 'BGMI Character UID', icon: Gamepad2,    placeholder: 'Enter 10-digit BGMI Character ID (e.g. 5567891234)...' },
 ];
 
 export default function SearchBar({
@@ -92,9 +92,9 @@ export default function SearchBar({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full space-y-3 font-mono">
-      {/* Category Pills Bar with Cyber Premium Aesthetic */}
-      <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-border-subtle shrink-0">
+    <form onSubmit={handleSubmit} className="w-full space-y-3 font-sans">
+      {/* Category Pills Bar */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin shrink-0">
         {typeOptions.map((opt) => {
           const Icon = opt.icon;
           const isActive = type === opt.value;
@@ -104,13 +104,14 @@ export default function SearchBar({
               type="button"
               onClick={() => setType(opt.value)}
               className={`
-                flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider whitespace-nowrap border transition-all duration-200 select-none
+                flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider whitespace-nowrap border transition-all duration-200 select-none
                 ${isActive 
-                  ? 'border-accent-cyan text-accent-cyan bg-accent-cyan/15 shadow-[0_0_15px_rgba(6,182,212,0.2)] font-extrabold scale-[1.02]' 
-                  : 'border-border-subtle/70 bg-white/[0.01] text-text-secondary hover:text-text-primary hover:border-accent-cyan/40 hover:bg-white/[0.03]'}
+                  ? 'border-accent-cyan text-accent-cyan bg-accent-cyan/15 shadow-[0_0_15px_rgba(6,182,212,0.25)] scale-[1.02]' 
+                  : 'border-white/5 bg-white/[0.02] text-text-secondary hover:text-white hover:border-white/15 hover:bg-white/[0.05]'}
               `}
+              style={{ fontFamily: 'var(--font-h)' }}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-accent-cyan animate-pulse' : 'text-text-muted'}`} />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-accent-cyan' : 'text-text-muted'}`} />
               <span>{opt.label}</span>
             </button>
           );
@@ -118,25 +119,23 @@ export default function SearchBar({
       </div>
 
       {/* Input Box & Action Button */}
-      <div className="flex gap-2">
+      <div className="flex gap-2.5">
         <div className="relative flex-1 group">
-          <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 via-accent-purple/10 to-accent-green/10 rounded-xl blur-md opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none" />
-          
           <div className="relative flex items-center">
-            <Search className="absolute left-3.5 w-4 h-4 text-accent-cyan pointer-events-none" />
+            <Search className="absolute left-4 w-4 h-4 text-accent-cyan pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={activePlaceholder}
-              className="w-full bg-[#070b16]/90 border border-border-subtle hover:border-accent-cyan/40 focus:border-accent-cyan text-text-primary placeholder-text-muted font-mono text-xs rounded-xl pl-10 pr-10 py-3.5 transition-all duration-200 outline-none backdrop-blur-md shadow-inner"
+              className="input-field pl-11 pr-10 py-3.5 text-sm"
             />
             {query && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="absolute right-3.5 text-text-muted hover:text-accent-cyan transition-colors"
+                className="absolute right-3.5 text-text-muted hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -147,17 +146,16 @@ export default function SearchBar({
         <button
           type="submit"
           disabled={isLoading || !query.trim()}
-          className="px-6 py-3.5 bg-accent-cyan text-bg-void font-bold text-xs uppercase tracking-widest rounded-xl hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shrink-0 active:scale-95"
+          className="btn btn-cyan px-7 py-3.5 text-xs tracking-wider flex items-center gap-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {isLoading ? (
-            <span className="w-4 h-4 border-2 border-bg-void border-t-transparent rounded-full animate-spin" />
+            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
             <Search className="w-4 h-4" />
           )}
-          <span className="hidden sm:inline font-display uppercase tracking-wider">Search Registry</span>
+          <span className="hidden sm:inline">Search Registry</span>
         </button>
       </div>
     </form>
   );
 }
-

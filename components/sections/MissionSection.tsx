@@ -3,37 +3,48 @@ import { ShieldCheck, Users } from 'lucide-react';
 
 export default function MissionSection() {
   return (
-    <section className="relative py-24 px-4 bg-bg-surface border-b border-border-subtle/30 overflow-hidden">
-      {/* Background grid texture */}
-      <div className="absolute inset-0 cyber-grid opacity-30 pointer-events-none"></div>
+    <section className="relative py-24 px-4 bg-[#080a0f] border-b border-white/5 overflow-hidden font-sans">
+      {/* Subtle Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-accent-cyan/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="max-w-4xl mx-auto text-center space-y-10 relative z-10">
         <div className="space-y-4">
-          <h2 className="text-sm font-mono text-accent-cyan uppercase tracking-widest font-bold">
-            Guarding the BGMI Trading Frontier
-          </h2>
-          <p className="text-2xl md:text-4xl font-bold font-display tracking-wide text-text-primary leading-snug">
+          <div className="badge badge-cyan mx-auto">
+            OUR MISSION
+          </div>
+          <p 
+            className="text-2xl md:text-4xl font-extrabold tracking-tight text-white leading-snug"
+            style={{ fontFamily: 'var(--font-h)' }}
+          >
             "Scammers exploit anonymity. We eliminate it by indexing threat markers, establishing accountability, and spotlighting verified traders."
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-lg mx-auto pt-6 text-left font-mono">
-          <div className="flex gap-4 p-4 rounded bg-white/[0.02] border border-border-subtle/50">
-            <ShieldCheck className="w-8 h-8 text-accent-cyan shrink-0" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto pt-4 text-left">
+          <div className="glass-panel card-glow-cyan rounded-2xl p-6 flex gap-4 transition-all duration-300 hover:-translate-y-1">
+            <div className="w-12 h-12 rounded-xl bg-accent-cyan/10 border border-accent-cyan/25 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-6 h-6 text-accent-cyan" />
+            </div>
             <div>
-              <p className="text-xl font-bold text-text-primary">100% Verified</p>
-              <p className="text-xs text-text-secondary mt-1 font-sans">
-                Reports undergo extensive moderation verification using link-referenced proof. No spam logs.
+              <p className="text-lg font-bold text-white uppercase tracking-wide" style={{ fontFamily: 'var(--font-h)' }}>
+                100% Moderated
+              </p>
+              <p className="text-xs text-text-secondary mt-1 font-sans leading-relaxed">
+                Reports undergo extensive moderation verification using link-referenced evidence. No spam or fabricated claims.
               </p>
             </div>
           </div>
 
-          <div className="flex gap-4 p-4 rounded bg-white/[0.02] border border-border-subtle/50">
-            <Users className="w-8 h-8 text-accent-green shrink-0" />
+          <div className="glass-panel card-glow-green rounded-2xl p-6 flex gap-4 transition-all duration-300 hover:-translate-y-1">
+            <div className="w-12 h-12 rounded-xl bg-accent-green/10 border border-accent-green/25 flex items-center justify-center shrink-0">
+              <Users className="w-6 h-6 text-accent-green" />
+            </div>
             <div>
-              <p className="text-xl font-bold text-text-primary">Community First</p>
-              <p className="text-xs text-text-secondary mt-1 font-sans">
-                A system built for gamers, by gamers. We keep trade channels safe and reputation intelligence visible.
+              <p className="text-lg font-bold text-white uppercase tracking-wide" style={{ fontFamily: 'var(--font-h)' }}>
+                Community First
+              </p>
+              <p className="text-xs text-text-secondary mt-1 font-sans leading-relaxed">
+                Built by gamers for gamers. We safeguard marketplace channels and keep trader reputation intelligence transparent.
               </p>
             </div>
           </div>

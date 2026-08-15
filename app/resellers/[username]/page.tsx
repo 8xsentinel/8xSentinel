@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Navbar from '../../../components/layout/Navbar';
-import Footer from '../../../components/layout/Footer';
 import TrustScoreRing from '../../../components/ui/TrustScoreRing';
 import { db } from '../../../lib/db';
 import { TrustedReseller, ResellerReview } from '../../../types';
@@ -137,23 +135,21 @@ export default function ResellerProfilePage() {
 
   if (!reseller) {
     return (
-      <>
-        <Navbar />
-        <main className="flex-1 max-w-xl mx-auto py-20 px-4 text-center font-mono text-sm space-y-4">
-          <AlertTriangle className="w-12 h-12 text-accent-amber mx-auto" />
-          <h2 className="text-xl font-bold uppercase tracking-wider text-text-primary">Profile Not Found</h2>
-          <p className="text-text-secondary text-xs font-sans">
-            The requested trader profile name is either suspended, rejected, or unregistered.
-          </p>
-          <button
-            onClick={() => router.push('/resellers')}
-            className="bg-transparent border border-border-subtle hover:border-accent-green/30 text-accent-green px-4 py-2 rounded text-xs"
-          >
-            &larr; Back to Directory
-          </button>
-        </main>
-        <Footer />
-      </>
+      <div className="max-w-xl mx-auto py-20 px-4 text-center font-sans space-y-4">
+        <AlertTriangle className="w-12 h-12 text-accent-amber mx-auto" />
+        <h2 className="text-xl font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-h)' }}>
+          Profile Not Found
+        </h2>
+        <p className="text-text-secondary text-xs font-sans">
+          The requested trader profile name is either suspended, rejected, or unregistered.
+        </p>
+        <button
+          onClick={() => router.push('/resellers')}
+          className="btn btn-outline py-2 px-4 text-xs"
+        >
+          &larr; Back to Directory
+        </button>
+      </div>
     );
   }
 
@@ -163,12 +159,9 @@ export default function ResellerProfilePage() {
   const starsCount = Math.round((ratingPct / 100) * 5);
 
   return (
-    <>
-      <Navbar />
-      <main className="flex-1 max-w-5xl mx-auto py-12 px-4 space-y-8 font-mono">
-        
-        {/* Banner Area and header */}
-        <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-6 relative overflow-hidden">
+    <div className="max-w-5xl mx-auto py-12 px-4 space-y-8 font-sans">
+      {/* Banner Area and header */}
+      <div className="glass-panel card-glow-green rounded-2xl p-6 relative overflow-hidden">
           {/* Neon corner overlay */}
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-accent-green/10 to-transparent pointer-events-none"></div>
           
@@ -461,12 +454,8 @@ export default function ResellerProfilePage() {
                 ⚠️ Report this merchant profile
               </Link>
             </div>
-
           </div>
         </div>
-
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }

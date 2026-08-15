@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/lib/firebase/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -9,21 +9,22 @@ import { ShieldAlert, ShieldCheck, UserCircle, History, UploadCloud, AlertCircle
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const { user, isLoaded } = useUser();
+  const { user, loading } = useAuth();
 
-  // Mock role logic until Convex syncing is implemented
-  const userRole: "customer" | "reseller" = (user?.publicMetadata?.role as any) || "reseller"; 
+  const userRole: "customer" | "reseller" = "reseller"; 
 
-  if (!isLoaded) {
-    return <div className="container py-24 text-center">Loading dashboard...</div>;
+  if (loading) {
+    return <div className="container py-24 text-center font-sans">Loading dashboard...</div>;
   }
 
+  const displayName = user?.displayName || user?.email?.split('@')[0] || "Operator";
+
   return (
-    <div className="container py-12 max-w-6xl mx-auto space-y-8">
+    <div className="container py-12 max-w-6xl mx-auto space-y-8 font-sans">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {user?.firstName || "User"}.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: 'var(--font-h)' }}>Dashboard</h1>
+          <p className="text-muted-foreground">Welcome back, {displayName}.</p>
         </div>
         <Badge variant="outline" className="px-4 py-1 uppercase tracking-wider">
           {userRole} Account
