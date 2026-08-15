@@ -31,10 +31,10 @@ export default function SellerCard({ reseller }: SellerCardProps) {
               <h3 className="text-[15px] font-bold text-white uppercase tracking-wide truncate" style={{ fontFamily: 'var(--font-h)' }}>
                 {reseller.store_name}
               </h3>
-              {reseller.region && (
+              {(reseller.state || reseller.region) && (
                 <span className="text-[10px] font-mono text-accent-cyan border border-accent-cyan/30 bg-accent-cyan/10 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
                   <MapPin className="w-2.5 h-2.5" />
-                  {reseller.region}
+                  {reseller.state || reseller.region}
                 </span>
               )}
             </div>
@@ -49,15 +49,36 @@ export default function SellerCard({ reseller }: SellerCardProps) {
           )}
         </div>
 
-        <div className="flex flex-wrap gap-3 text-[11px] text-text-secondary font-sans">
-          {reseller.telegram_username && (
-            <span className="flex items-center gap-1">
-              <MessageCircle className="w-3.5 h-3.5 text-accent-tg" /> @{reseller.telegram_username}
+        <div className="flex flex-wrap items-center gap-2 text-[11px] font-sans">
+          {reseller.primary_platform && (
+            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+              reseller.primary_platform === 'whatsapp_only'
+                ? 'bg-accent-green/10 border-accent-green/30 text-accent-green'
+                : reseller.primary_platform === 'telegram_only'
+                ? 'bg-accent-cyan/10 border-accent-cyan/30 text-accent-cyan'
+                : reseller.primary_platform === 'whatsapp_primary'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : reseller.primary_platform === 'telegram_primary'
+                ? 'bg-sky-500/10 border-sky-500/30 text-sky-400'
+                : 'bg-accent-amber/10 border-accent-amber/30 text-accent-amber'
+            }`}>
+              {reseller.primary_platform === 'whatsapp_only' && '💬 WhatsApp Only'}
+              {reseller.primary_platform === 'telegram_only' && '✈️ Telegram Only'}
+              {reseller.primary_platform === 'whatsapp_primary' && '💬 WhatsApp Primary'}
+              {reseller.primary_platform === 'telegram_primary' && '✈️ Telegram Primary'}
+              {reseller.primary_platform === 'both' && '⚡ Dual Network'}
             </span>
           )}
+
           {reseller.whatsapp_number && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 text-text-secondary">
               <Phone className="w-3.5 h-3.5 text-accent-green" /> {reseller.whatsapp_number}
+            </span>
+          )}
+
+          {reseller.telegram_username && (
+            <span className="flex items-center gap-1 text-text-secondary">
+              <MessageCircle className="w-3.5 h-3.5 text-accent-tg" /> @{reseller.telegram_username}
             </span>
           )}
         </div>

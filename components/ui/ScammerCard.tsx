@@ -35,7 +35,7 @@ export default function ScammerCard({ entity }: ScammerCardProps) {
 
         {/* Identifiers grid */}
         <div className="mt-4 grid grid-cols-2 gap-2">
-          {ids.phone?.slice(0, 1).map((p: string) => (
+          {(ids.phone || ids.whatsapp)?.slice(0, 1).map((p: string) => (
             <div key={p} className="flex items-center gap-1.5 text-[11px] text-text-secondary truncate font-sans">
               <Phone className="w-3.5 h-3.5 text-accent-cyan shrink-0" /> {p}
             </div>

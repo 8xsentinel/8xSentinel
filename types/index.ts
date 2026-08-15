@@ -1,4 +1,4 @@
-export type UserRole = 'user' | 'verified_reseller' | 'regional_admin' | 'admin';
+export type UserRole = 'user' | 'verified_reseller' | 'regional_admin' | 'admin' | 'super_admin' | 'moderator' | 'seller';
 export type ScamReportStatus = 'pending' | 'approved' | 'rejected' | 'flagged';
 export type ScamType =
   | 'fake_account_sale'
@@ -9,7 +9,7 @@ export type ScamType =
   | 'advance_payment'
   | 'other';
 
-export type EvidenceType = 'telegram' | 'youtube' | 'drive' | 'image' | 'other';
+export type EvidenceType = 'telegram' | 'youtube' | 'drive' | 'image' | 'screenshot' | 'other';
 
 export interface EvidenceLink {
   type: EvidenceType;
@@ -17,7 +17,7 @@ export interface EvidenceLink {
   label: string;
 }
 
-export type RiskLevel = 'low' | 'medium' | 'high' | 'confirmed';
+export type RiskLevel = 'low' | 'medium' | 'high' | 'confirmed' | 'critical';
 export type ResellerVerificationStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 
 export interface Profile {
@@ -29,6 +29,14 @@ export interface Profile {
   roles?: UserRole[];
   primary_email?: string | null;
   region?: string | null;
+  state?: string | null;
+  store_status?: 'not_registered' | 'pending' | 'approved' | 'rejected' | 'suspended';
+  primary_platform?: 'whatsapp_primary' | 'telegram_primary' | 'whatsapp_only' | 'telegram_only' | 'both';
+  country_code?: string | null;
+  whatsapp_username?: string | null;
+  whatsapp_group_link?: string | null;
+  telegram_channel_link?: string | null;
+  operating_since_year?: number | null;
   is_banned: boolean;
   ban_reason: string | null;
   reputation_points: number;
@@ -50,6 +58,7 @@ export interface ScammerEntity {
     telegram?: string[];
     whatsapp?: string[];
     whatsapp_username?: string[];
+    phone?: string[];
     upi?: string[];
     instagram?: string[];
     bank_account?: string[];
@@ -101,9 +110,16 @@ export interface TrustedReseller {
   tagline: string | null;
   bio: string | null;
   telegram_username: string | null;
+  telegram_channel_link?: string | null;
   whatsapp_number: string | null;
+  whatsapp_username?: string | null;
+  whatsapp_group_link?: string | null;
   instagram_username: string | null;
   youtube_channel: string | null;
+  bgmi_uid?: string | null;
+  country_code?: string | null;
+  primary_platform?: 'whatsapp_primary' | 'telegram_primary' | 'whatsapp_only' | 'telegram_only' | 'both';
+  operating_since_year?: number | null;
   verification_status: ResellerVerificationStatus;
   verified_at: string | null;
   verified_by: string | null;
@@ -117,6 +133,7 @@ export interface TrustedReseller {
   badges: Array<{ type: 'top_seller' | 'verified' | 'trusted_og'; earned_at: string }>;
   price_range: string | null;
   region?: string | null;
+  state?: string | null;
   verified_by_regional_admin_id?: string | null;
   verified_by_regional_admin_name?: string | null;
   is_active: boolean;

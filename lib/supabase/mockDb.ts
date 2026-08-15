@@ -1,9 +1,10 @@
 import { 
   Profile, ScamReport, ScammerEntity, TrustedReseller, ResellerReview, 
-  ScamType, EvidenceLink, RiskLevel, ResellerVerificationStatus 
+  ScamType, EvidenceLink, RiskLevel, ResellerVerificationStatus, UserRole
 } from '../../types';
 import { computeScammerRiskScore, getRiskLevel, computeResellerTrustScore } from '../algorithms/trustScore';
 import { findMatchingEntity } from '../algorithms/entityMatcher';
+import { getStateRegion } from '../constants/indiaStates';
 
 interface MockDatabase {
   profiles: Profile[];
@@ -18,15 +19,17 @@ const INITIAL_PROFILES: Profile[] = [
   {
     id: 'user-super-admin',
     username: '8xSentinel_ChiefAdmin',
-    display_name: '8xSentinel Chief Admin (Permanent)',
+    display_name: '8xSentinel Root Super Admin',
     avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=chiefadmin',
     role: 'admin',
-    roles: ['admin', 'admin'],
+    roles: ['admin', 'super_admin'],
     primary_email: '8xSentinel@gmail.com',
     region: 'Global',
+    state: 'National (Root)',
+    store_status: 'approved',
     is_banned: false,
     ban_reason: null,
-    reputation_points: 1000,
+    reputation_points: 9999,
     reports_submitted: 50,
     created_at: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
     last_seen: new Date().toISOString()
@@ -36,8 +39,11 @@ const INITIAL_PROFILES: Profile[] = [
     username: 'agent_sentinel',
     display_name: 'Sentinel Operator',
     avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=sentinel',
-    role: 'admin',
-    roles: ['admin'],
+    role: 'verified_reseller',
+    roles: ['verified_reseller'],
+    state: 'Delhi (NCT)',
+    region: 'North India',
+    store_status: 'approved',
     is_banned: false,
     ban_reason: null,
     reputation_points: 250,
@@ -53,7 +59,9 @@ const INITIAL_PROFILES: Profile[] = [
     role: 'regional_admin',
     roles: ['verified_reseller', 'regional_admin'],
     primary_email: 'apex_regional@sentinel.org',
+    state: 'Punjab',
     region: 'North India',
+    store_status: 'approved',
     is_banned: false,
     ban_reason: null,
     reputation_points: 480,
@@ -68,7 +76,9 @@ const INITIAL_PROFILES: Profile[] = [
     avatar_url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=trader',
     role: 'verified_reseller',
     roles: ['verified_reseller'],
-    region: 'North India',
+    state: 'Maharashtra',
+    region: 'West India',
+    store_status: 'approved',
     is_banned: false,
     ban_reason: null,
     reputation_points: 40,
@@ -83,6 +93,9 @@ const INITIAL_PROFILES: Profile[] = [
     avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=mod',
     role: 'regional_admin',
     roles: ['regional_admin'],
+    state: 'Karnataka',
+    region: 'South India',
+    store_status: 'approved',
     is_banned: false,
     ban_reason: null,
     reputation_points: 110,
@@ -237,7 +250,7 @@ const INITIAL_RESELLERS: TrustedReseller[] = [
     youtube_channel: 'https://youtube.com/@sentinel_deals',
     verification_status: 'approved',
     verified_at: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
-    verified_by: 'user-1',
+    verified_by: 'user-super-admin',
     rejection_reason: null,
     trust_score: 98,
     deals_completed: 184,
@@ -250,13 +263,15 @@ const INITIAL_RESELLERS: TrustedReseller[] = [
       { type: 'verified', earned_at: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString() }
     ],
     price_range: '₹5,000 - ₹1,500,000',
+    state: 'Delhi (NCT)',
+    region: 'North India',
     is_active: true,
     created_at: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
     updated_at: new Date().toISOString()
   },
   {
     id: 'reseller-2',
-    profile_id: 'user-3',
+    profile_id: 'user-2',
     store_name: 'Arbiter BGMI Store',
     tagline: 'Secure trading, premium skins',
     bio: 'Professional esports skins trader and verified agent. Quick deals, transparent pricing, zero compromise on safety.',
@@ -266,7 +281,7 @@ const INITIAL_RESELLERS: TrustedReseller[] = [
     youtube_channel: null,
     verification_status: 'approved',
     verified_at: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString(),
-    verified_by: 'user-1',
+    verified_by: 'user-super-admin',
     rejection_reason: null,
     trust_score: 88,
     deals_completed: 45,
@@ -278,8 +293,71 @@ const INITIAL_RESELLERS: TrustedReseller[] = [
       { type: 'verified', earned_at: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString() }
     ],
     price_range: '₹2,000 - ₹100,000',
+    state: 'Maharashtra',
+    region: 'West India',
     is_active: true,
     created_at: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'reseller-3',
+    profile_id: 'user-dual-role',
+    store_name: 'Apex Regional Trades',
+    tagline: 'Punjab & North India regional powerhouse',
+    bio: 'Certified Regional Admin & OG account supplier. Specializing in verified tier-1 squad transfers and custom loadouts.',
+    telegram_username: 'apex_punjab_deals',
+    whatsapp_number: '+91 97777-66666',
+    instagram_username: 'apex_punjab_bgmi',
+    youtube_channel: null,
+    verification_status: 'approved',
+    verified_at: new Date(Date.now() - 80 * 24 * 60 * 60 * 1000).toISOString(),
+    verified_by: 'user-super-admin',
+    rejection_reason: null,
+    trust_score: 95,
+    deals_completed: 120,
+    positive_feedback: 54,
+    negative_feedback: 0,
+    years_active: 2.8,
+    specializes_in: ['account_sale', 'uc_topup'],
+    badges: [
+      { type: 'top_seller', earned_at: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString() },
+      { type: 'verified', earned_at: new Date(Date.now() - 80 * 24 * 60 * 60 * 1000).toISOString() }
+    ],
+    price_range: '₹10,000 - ₹500,000',
+    state: 'Punjab',
+    region: 'North India',
+    is_active: true,
+    created_at: new Date(Date.now() - 80 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'reseller-4',
+    profile_id: 'user-3',
+    store_name: 'Bangalore BGMI Vault',
+    tagline: 'Karnataka official trade desk',
+    bio: 'South India verified regional distribution point. High safety escrow transfers, instant UC recharge.',
+    telegram_username: 'bengaluru_vault',
+    whatsapp_number: '+91 96666-55555',
+    instagram_username: 'bengaluru_vault_bgmi',
+    youtube_channel: null,
+    verification_status: 'approved',
+    verified_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    verified_by: 'user-super-admin',
+    rejection_reason: null,
+    trust_score: 92,
+    deals_completed: 82,
+    positive_feedback: 39,
+    negative_feedback: 0,
+    years_active: 2.1,
+    specializes_in: ['account_sale', 'uc_topup', 'recovery'],
+    badges: [
+      { type: 'verified', earned_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() }
+    ],
+    price_range: '₹3,000 - ₹250,000',
+    state: 'Karnataka',
+    region: 'South India',
+    is_active: true,
+    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     updated_at: new Date().toISOString()
   }
 ];
@@ -374,10 +452,19 @@ export const db = {
     return db.currentUser;
   },
 
-  setCurrentUser: (role: 'user' | 'verified_reseller' | 'regional_admin' | 'admin' | null): Profile | null => {
+  setCurrentUser: (role: UserRole | null, authEmail?: string): Profile | null => {
     const db = getMockDb();
     if (!role) {
       db.currentUser = null;
+    } else if (role === 'admin' || role === 'super_admin') {
+      const currentEmail = authEmail?.toLowerCase().trim() || db.currentUser?.primary_email?.toLowerCase().trim();
+      if (currentEmail === '8xsentinel@gmail.com') {
+        const superAdmin = db.profiles.find(p => p.primary_email?.toLowerCase() === '8xsentinel@gmail.com');
+        if (superAdmin) db.currentUser = superAdmin;
+      } else {
+        console.warn('[SECURITY] Admin role elevation blocked: Only 8xSentinel@gmail.com is authorized.');
+        return db.currentUser;
+      }
     } else {
       const match = db.profiles.find(p => p.role === role);
       if (match) db.currentUser = match;
@@ -386,59 +473,86 @@ export const db = {
     return db.currentUser;
   },
 
-  syncClerkUser: (email: string, username: string, name: string): Profile => {
+  syncFirebaseUser: (email: string, displayName?: string, photoURL?: string): Profile => {
     const dbData = getMockDb();
-    const cleanEmail = email.toLowerCase().trim();
+    const cleanEmail = (email || '').toLowerCase().trim();
 
-    // 1. Permanent Super Admin Check for 8xSentinel@gmail.com
+    // 1. Permanent Super Admin Check: ONLY for 8xSentinel@gmail.com
     if (cleanEmail === '8xsentinel@gmail.com') {
-      let superAdmin = dbData.profiles.find(p => p.primary_email?.toLowerCase() === '8xsentinel@gmail.com' || p.role === 'admin');
+      let superAdmin = dbData.profiles.find(p => p.primary_email?.toLowerCase() === '8xsentinel@gmail.com');
       if (!superAdmin) {
         superAdmin = {
           id: 'user-super-admin',
-          username: '8xSentinel_ChiefAdmin',
-          display_name: '8xSentinel Chief Admin (Permanent)',
-          avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=chiefadmin',
+          username: '8xSentinel_RootAdmin',
+          display_name: displayName || '8xSentinel Root Super Admin',
+          avatar_url: photoURL || 'https://api.dicebear.com/7.x/bottts/svg?seed=chiefadmin',
           role: 'admin',
-          roles: ['admin', 'admin'],
+          roles: ['admin', 'super_admin'],
           primary_email: '8xSentinel@gmail.com',
           region: 'Global',
           is_banned: false,
           ban_reason: null,
-          reputation_points: 1000,
+          reputation_points: 9999,
           reports_submitted: 50,
           created_at: new Date().toISOString(),
           last_seen: new Date().toISOString()
         };
-        dbData.profiles.push(superAdmin);
+        dbData.profiles.unshift(superAdmin);
+      } else {
+        superAdmin.role = 'admin';
+        superAdmin.roles = ['admin', 'super_admin'];
+        if (photoURL) superAdmin.avatar_url = photoURL;
+        if (displayName) superAdmin.display_name = displayName;
+        superAdmin.last_seen = new Date().toISOString();
       }
       dbData.currentUser = superAdmin;
       saveMockDb(dbData);
       return superAdmin;
     }
 
-    // 2. Check existing profile by email or username
+    // 2. Non-admin users: Ensure they NEVER have super admin role
     let existing = dbData.profiles.find(
-      p => (p.primary_email && p.primary_email.toLowerCase() === cleanEmail) || p.username.toLowerCase() === username.toLowerCase()
+      p => p.primary_email && p.primary_email.toLowerCase() === cleanEmail
     );
 
     if (existing) {
+      if (existing.role === 'admin' || existing.role === 'super_admin') {
+        existing.role = 'user';
+        existing.roles = ['user'];
+      }
       existing.last_seen = new Date().toISOString();
-      if (email && !existing.primary_email) existing.primary_email = email;
+      if (photoURL && !existing.avatar_url) existing.avatar_url = photoURL;
+      if (displayName && !existing.display_name) existing.display_name = displayName;
+      
+      // Sync store status from trusted_resellers table
+      const storeApp = dbData.trusted_resellers.find(r => r.profile_id === existing!.id);
+      if (storeApp) {
+        existing.store_status = storeApp.verification_status;
+        existing.state = storeApp.state || existing.state;
+        existing.region = storeApp.region || existing.region;
+        if (storeApp.verification_status === 'approved' && existing.role !== 'regional_admin') {
+          existing.role = 'verified_reseller';
+        }
+      } else if (!existing.store_status) {
+        existing.store_status = 'not_registered';
+      }
+
       dbData.currentUser = existing;
       saveMockDb(dbData);
       return existing;
     }
 
-    // 3. Create new profile automatically
+    // 3. Create new profile automatically for authenticated user
+    const username = cleanEmail ? cleanEmail.split('@')[0] : `user_${Date.now().toString().slice(-4)}`;
     const newProfile: Profile = {
       id: `user-${Date.now()}`,
-      username: username || `user_${Date.now().toString().slice(-4)}`,
-      display_name: name || username || 'Community User',
-      avatar_url: `https://api.dicebear.com/7.x/identicon/svg?seed=${username || 'user'}`,
+      username,
+      display_name: displayName || username || 'Merchant Candidate',
+      avatar_url: photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
       role: 'user',
       roles: ['user'],
       primary_email: email,
+      store_status: 'not_registered',
       is_banned: false,
       ban_reason: null,
       reputation_points: 10,
@@ -450,6 +564,10 @@ export const db = {
     dbData.currentUser = newProfile;
     saveMockDb(dbData);
     return newProfile;
+  },
+
+  syncClerkUser: (email: string, username: string, name: string): Profile => {
+    return db.syncFirebaseUser(email, name);
   },
 
   registerUser: (username: string, display_name: string): Profile => {
@@ -777,41 +895,113 @@ export const db = {
     return newReview;
   },
 
+  getUserStoreApplication: (profileId: string): TrustedReseller | null => {
+    const db = getMockDb();
+    if (!profileId) {
+      if (db.currentUser) {
+        profileId = db.currentUser.id;
+      }
+    }
+    return db.trusted_resellers.find(r => r.profile_id === profileId) || 
+           (db.currentUser ? db.trusted_resellers.find(r => r.profile_id === db.currentUser?.id) : null) || null;
+  },
+
   applyForReseller: (storeData: Partial<TrustedReseller>): TrustedReseller | null => {
     const dbData = getMockDb();
-    const user = dbData.currentUser;
-    if (!user) return null;
+    let user = dbData.currentUser;
+    if (!user) {
+      // Find the last registered non-admin profile or active profile
+      user = dbData.profiles.find(p => p.role === 'user' || p.role === 'verified_reseller') || dbData.profiles[0];
+      if (user) {
+        dbData.currentUser = user;
+      } else {
+        return null;
+      }
+    }
 
-    const newApplication: TrustedReseller = {
-      id: `reseller-${Date.now()}`,
-      profile_id: user.id,
-      store_name: storeData.store_name || `${user.display_name || user.username}'s Store`,
-      tagline: storeData.tagline || null,
-      bio: storeData.bio || null,
-      telegram_username: storeData.telegram_username?.replace('@', '') || null,
-      whatsapp_number: storeData.whatsapp_number || null,
-      instagram_username: storeData.instagram_username?.replace('@', '') || null,
-      youtube_channel: storeData.youtube_channel || null,
-      verification_status: 'pending',
-      verified_at: null,
-      verified_by: null,
-      rejection_reason: null,
-      trust_score: 30, // Base default score
-      deals_completed: 0,
-      positive_feedback: 0,
-      negative_feedback: 0,
-      years_active: Number(storeData.years_active) || 0,
-      specializes_in: storeData.specializes_in || [],
-      badges: [],
-      price_range: storeData.price_range || null,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    const chosenState = storeData.state || 'Delhi (NCT)';
+    const region = getStateRegion(chosenState);
 
-    dbData.trusted_resellers.push(newApplication);
+    let existing = dbData.trusted_resellers.find(r => r.profile_id === user.id);
+
+    if (existing) {
+      existing.store_name = storeData.store_name || existing.store_name;
+      existing.state = chosenState;
+      existing.region = region;
+      existing.country_code = storeData.country_code || existing.country_code || '+91';
+      existing.primary_platform = storeData.primary_platform || existing.primary_platform || 'whatsapp_primary';
+      existing.operating_since_year = storeData.operating_since_year !== undefined ? storeData.operating_since_year : existing.operating_since_year;
+      existing.tagline = storeData.tagline !== undefined ? storeData.tagline : existing.tagline;
+      existing.bio = storeData.bio !== undefined ? storeData.bio : existing.bio;
+      existing.telegram_username = storeData.telegram_username ? storeData.telegram_username.replace('@', '') : existing.telegram_username;
+      existing.telegram_channel_link = storeData.telegram_channel_link !== undefined ? storeData.telegram_channel_link : existing.telegram_channel_link;
+      existing.whatsapp_number = storeData.whatsapp_number !== undefined ? storeData.whatsapp_number : existing.whatsapp_number;
+      existing.whatsapp_username = storeData.whatsapp_username !== undefined ? storeData.whatsapp_username : existing.whatsapp_username;
+      existing.whatsapp_group_link = storeData.whatsapp_group_link !== undefined ? storeData.whatsapp_group_link : existing.whatsapp_group_link;
+      existing.instagram_username = storeData.instagram_username ? storeData.instagram_username.replace('@', '') : existing.instagram_username;
+      existing.youtube_channel = storeData.youtube_channel !== undefined ? storeData.youtube_channel : existing.youtube_channel;
+      existing.bgmi_uid = storeData.bgmi_uid !== undefined ? storeData.bgmi_uid : existing.bgmi_uid;
+      existing.specializes_in = storeData.specializes_in || existing.specializes_in;
+      existing.years_active = storeData.years_active !== undefined ? Number(storeData.years_active) : existing.years_active;
+      existing.price_range = storeData.price_range !== undefined ? storeData.price_range : existing.price_range;
+      existing.verification_status = 'pending';
+      existing.updated_at = new Date().toISOString();
+    } else {
+      existing = {
+        id: `reseller-${Date.now()}`,
+        profile_id: user.id,
+        store_name: storeData.store_name || `${user.display_name || user.username}'s Store`,
+        tagline: storeData.tagline || null,
+        bio: storeData.bio || null,
+        telegram_username: storeData.telegram_username?.replace('@', '') || null,
+        telegram_channel_link: storeData.telegram_channel_link || null,
+        whatsapp_number: storeData.whatsapp_number || null,
+        whatsapp_username: storeData.whatsapp_username || null,
+        whatsapp_group_link: storeData.whatsapp_group_link || null,
+        instagram_username: storeData.instagram_username?.replace('@', '') || null,
+        youtube_channel: storeData.youtube_channel || null,
+        bgmi_uid: storeData.bgmi_uid || null,
+        country_code: storeData.country_code || '+91',
+        primary_platform: storeData.primary_platform || 'whatsapp_primary',
+        operating_since_year: storeData.operating_since_year || 2022,
+        verification_status: 'pending',
+        verified_at: null,
+        verified_by: null,
+        rejection_reason: null,
+        trust_score: 30, // Base default score
+        deals_completed: 0,
+        positive_feedback: 0,
+        negative_feedback: 0,
+        years_active: Number(storeData.years_active) || 0,
+        specializes_in: storeData.specializes_in || ['account_sale'],
+        badges: [],
+        price_range: storeData.price_range || null,
+        state: chosenState,
+        region: region,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      dbData.trusted_resellers.push(existing);
+    }
+
+    // Update user profile in database
+    const profile = dbData.profiles.find(p => p.id === user.id);
+    if (profile) {
+      profile.store_status = 'pending';
+      profile.state = chosenState;
+      profile.region = region;
+      profile.primary_platform = existing.primary_platform;
+      profile.country_code = existing.country_code;
+      profile.whatsapp_username = existing.whatsapp_username;
+      profile.whatsapp_group_link = existing.whatsapp_group_link;
+      profile.telegram_channel_link = existing.telegram_channel_link;
+      profile.operating_since_year = existing.operating_since_year;
+      dbData.currentUser = profile;
+    }
+
     saveMockDb(dbData);
-    return newApplication;
+    return existing;
   },
 
   // Admin moderation queues
@@ -963,7 +1153,7 @@ export const db = {
     return reseller;
   },
 
-  assignRegionalAdmin: (userId: string, region: string): Profile | null => {
+  assignRegionalAdmin: (userId: string, stateOrRegion: string): Profile | null => {
     const dbData = getMockDb();
     const profile = dbData.profiles.find(p => p.id === userId);
     if (!profile) return null;
@@ -973,7 +1163,8 @@ export const db = {
     if (!profile.roles.includes('regional_admin')) {
       profile.roles.push('regional_admin');
     }
-    profile.region = region;
+    profile.state = stateOrRegion;
+    profile.region = getStateRegion(stateOrRegion);
     saveMockDb(dbData);
     return profile;
   },
@@ -989,7 +1180,23 @@ export const db = {
     reseller.verified_by_regional_admin_id = admin.id;
     reseller.verified_by_regional_admin_name = admin.display_name || admin.username;
     reseller.verified_at = new Date().toISOString();
-    reseller.region = admin.region || reseller.region || 'North India';
+    if (!reseller.state && admin.state) reseller.state = admin.state;
+    reseller.region = reseller.state ? getStateRegion(reseller.state) : admin.region || 'North India';
+
+    // Upgrade seller profile
+    const sellerProfile = dbData.profiles.find(p => p.id === reseller.profile_id);
+    if (sellerProfile) {
+      if (sellerProfile.role !== 'regional_admin' && sellerProfile.role !== 'admin') {
+        sellerProfile.role = 'verified_reseller';
+      }
+      if (!sellerProfile.roles) sellerProfile.roles = ['user'];
+      if (!sellerProfile.roles.includes('verified_reseller')) {
+        sellerProfile.roles.push('verified_reseller');
+      }
+      sellerProfile.store_status = 'approved';
+      sellerProfile.state = reseller.state || sellerProfile.state;
+      sellerProfile.region = reseller.region || sellerProfile.region;
+    }
 
     saveMockDb(dbData);
     return reseller;
@@ -1008,8 +1215,13 @@ export const db = {
     reseller.verified_at = new Date().toISOString();
     reseller.updated_at = new Date().toISOString();
 
+    const sellerProfile = dbData.profiles.find(p => p.id === reseller.profile_id);
+
     if (status === 'rejected') {
       reseller.rejection_reason = rejectionReason || 'Does not meet our trading standard requirements.';
+      if (sellerProfile) {
+        sellerProfile.store_status = 'rejected';
+      }
     } else if (status === 'approved') {
       reseller.badges = [
         { type: 'verified', earned_at: new Date().toISOString() }
@@ -1018,6 +1230,19 @@ export const db = {
         ...reseller,
         scam_report_count: 0
       });
+
+      if (sellerProfile) {
+        if (sellerProfile.role !== 'regional_admin' && sellerProfile.role !== 'admin') {
+          sellerProfile.role = 'verified_reseller';
+        }
+        if (!sellerProfile.roles) sellerProfile.roles = ['user'];
+        if (!sellerProfile.roles.includes('verified_reseller')) {
+          sellerProfile.roles.push('verified_reseller');
+        }
+        sellerProfile.store_status = 'approved';
+        sellerProfile.state = reseller.state || sellerProfile.state;
+        sellerProfile.region = reseller.region || sellerProfile.region;
+      }
     }
 
     saveMockDb(dbData);

@@ -10,6 +10,7 @@ import { db } from '../../lib/db';
 import { ScammerEntity, TrustedReseller } from '../../types';
 import { useAuth } from '../../lib/firebase/AuthContext';
 import { Filter, Info, ShieldCheck, Lock, ShieldAlert } from 'lucide-react';
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -214,17 +215,19 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="max-w-6xl mx-auto py-20 text-center text-text-muted">
-          <span className="w-8 h-8 border-3 border-accent-cyan border-t-transparent rounded-full animate-spin inline-block" />
-          <p className="mt-2 text-xs uppercase font-bold text-accent-cyan" style={{ fontFamily: 'var(--font-h)' }}>
-            Initializing Search...
-          </p>
-        </div>
-      }
-    >
-      <SearchContent />
-    </Suspense>
+    <ProtectedRoute>
+      <Suspense
+        fallback={
+          <div className="max-w-6xl mx-auto py-20 text-center text-text-muted">
+            <span className="w-8 h-8 border-3 border-accent-cyan border-t-transparent rounded-full animate-spin inline-block" />
+            <p className="mt-2 text-xs uppercase font-bold text-accent-cyan" style={{ fontFamily: 'var(--font-h)' }}>
+              Initializing Search...
+            </p>
+          </div>
+        }
+      >
+        <SearchContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }

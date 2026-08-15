@@ -8,6 +8,7 @@ import { reportSchema } from '../../lib/validators/reportSchema';
 import { EvidenceLink, ScamType } from '../../types';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, ShieldAlert, CheckCircle, Info } from 'lucide-react';
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
 
 export default function SubmitReportPage() {
   const router = useRouter();
@@ -119,7 +120,8 @@ export default function SubmitReportPage() {
   ];
 
   return (
-    <div className="max-w-3xl mx-auto py-12 px-4 space-y-8 font-sans">
+    <ProtectedRoute>
+      <div className="max-w-3xl mx-auto py-12 px-4 space-y-8 font-sans">
       {/* Header Title */}
       <div className="space-y-3">
         <div className="badge badge-red">
@@ -500,6 +502,7 @@ export default function SubmitReportPage() {
           )}
 
         </form>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

@@ -28,7 +28,7 @@ export default function LinkInput({ links, onChange, maxLinks = 5 }: LinkInputPr
     const newLink: EvidenceLink = {
       url: validUrl,
       type,
-      label: label.trim() || undefined,
+      label: label.trim() || 'Evidence Link',
     };
 
     onChange([...links, newLink]);

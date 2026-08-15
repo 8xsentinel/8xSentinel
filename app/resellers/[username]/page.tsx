@@ -328,10 +328,24 @@ export default function ResellerProfilePage() {
             {/* Contact details */}
             <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-5 space-y-4">
               <h3 className="text-xs font-bold text-accent-green uppercase tracking-wider border-b border-border-subtle/30 pb-2">
-                Merchant Contacts
+                Merchant Contacts & Verification
               </h3>
               
               <div className="space-y-2">
+                {reseller.state && (
+                  <div className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] text-xs px-3.5 py-2.5 rounded">
+                    <span className="font-bold text-text-secondary">Operating State</span>
+                    <span className="font-mono text-accent-cyan font-bold">{reseller.state}</span>
+                  </div>
+                )}
+
+                {reseller.operating_since_year && (
+                  <div className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] text-xs px-3.5 py-2.5 rounded">
+                    <span className="font-bold text-text-secondary">In Business Since</span>
+                    <span className="font-mono text-accent-green font-bold">{reseller.operating_since_year} ({reseller.years_active} yr(s))</span>
+                  </div>
+                )}
+
                 {reseller.telegram_username && (
                   <a
                     href={`https://t.me/${reseller.telegram_username}`}
@@ -341,9 +355,24 @@ export default function ResellerProfilePage() {
                   >
                     <span className="flex items-center gap-2">
                       <MessageSquare className="w-4 h-4 text-sky-400" />
-                      <span className="font-bold text-text-secondary">Telegram</span>
+                      <span className="font-bold text-text-secondary">Telegram Admin</span>
                     </span>
                     <span className="font-mono text-text-muted group-hover:text-sky-400">@{reseller.telegram_username}</span>
+                  </a>
+                )}
+
+                {reseller.telegram_channel_link && (
+                  <a
+                    href={reseller.telegram_channel_link.startsWith('http') ? reseller.telegram_channel_link : `https://${reseller.telegram_channel_link}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-between border border-sky-500/20 bg-sky-500/[0.03] hover:bg-sky-500/10 text-xs px-3.5 py-2.5 rounded transition-all group"
+                  >
+                    <span className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-sky-400" />
+                      <span className="font-bold text-sky-300">Telegram Store Channel</span>
+                    </span>
+                    <span className="font-mono text-[10px] text-sky-400">Open Channel ↗</span>
                   </a>
                 )}
 
@@ -355,6 +384,28 @@ export default function ResellerProfilePage() {
                     </span>
                     <span className="font-mono text-text-muted">{reseller.whatsapp_number}</span>
                   </div>
+                )}
+
+                {reseller.whatsapp_username && (
+                  <div className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] text-xs px-3.5 py-2.5 rounded">
+                    <span className="font-bold text-text-secondary">WhatsApp Name</span>
+                    <span className="font-mono text-text-muted">{reseller.whatsapp_username}</span>
+                  </div>
+                )}
+
+                {reseller.whatsapp_group_link && (
+                  <a
+                    href={reseller.whatsapp_group_link.startsWith('http') ? reseller.whatsapp_group_link : `https://${reseller.whatsapp_group_link}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-between border border-emerald-500/20 bg-emerald-500/[0.03] hover:bg-emerald-500/10 text-xs px-3.5 py-2.5 rounded transition-all group"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-emerald-400" />
+                      <span className="font-bold text-emerald-300">WhatsApp Store Group</span>
+                    </span>
+                    <span className="font-mono text-[10px] text-emerald-400">Join Group ↗</span>
+                  </a>
                 )}
 
                 {reseller.instagram_username && (

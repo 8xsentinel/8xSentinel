@@ -4,13 +4,16 @@ import React, { useState, useEffect } from 'react';
 import SellerCard from '../../components/ui/SellerCard';
 import { db } from '../../lib/db';
 import { TrustedReseller } from '../../types';
-import { Search, Filter, ShieldCheck, MapPin, Users } from 'lucide-react';
+import { INDIAN_STATES, INDIA_REGIONS } from '../../lib/constants/indiaStates';
+import { Search, Filter, ShieldCheck, MapPin, Users, Building } from 'lucide-react';
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
 
 export default function ResellersDirectory() {
   const [resellers, setResellers] = useState<TrustedReseller[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState<string>('all');
+  const [selectedRegion, setSelectedRegion] = useState<string>('All Regions');
+  const [selectedState, setSelectedState] = useState<string>('all');
 
   useEffect(() => {
     db.getResellers().then((data) => {
@@ -21,24 +24,34 @@ export default function ResellersDirectory() {
 
   // Filtering logic
   const filteredResellers = resellers.filter((reseller) => {
+    const query = searchQuery.trim().toLowerCase();
     const matchesQuery =
-      searchQuery.trim() === '' ||
-      reseller.store_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reseller.telegram_username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reseller.whatsapp_number?.replace(/\D/g, '').includes(searchQuery.replace(/\D/g, '')) ||
-      reseller.profile?.username.toLowerCase().includes(searchQuery.toLowerCase());
+      query === '' ||
+      reseller.store_name.toLowerCase().includes(query) ||
+      reseller.state?.toLowerCase().includes(query) ||
+      reseller.region?.toLowerCase().includes(query) ||
+      reseller.telegram_username?.toLowerCase().includes(query) ||
+      reseller.whatsapp_number?.replace(/\D/g, '').includes(query.replace(/\D/g, '')) ||
+      reseller.profile?.username.toLowerCase().includes(query);
 
     const matchesRegion =
-      selectedRegion === 'all' ||
+      selectedRegion === 'All Regions' ||
       (reseller.region && reseller.region.toLowerCase() === selectedRegion.toLowerCase());
 
-    return matchesQuery && matchesRegion;
+    const matchesState =
+      selectedState === 'all' ||
+      (reseller.state && reseller.state.toLowerCase() === selectedState.toLowerCase());
+
+    return matchesQuery && matchesRegion && matchesState;
   });
 
-  const regionsList = ['all', 'North India', 'South India', 'West India', 'East India', 'Central India', 'North-East India', 'Pan India'];
+  const statesForSelectedRegion = selectedRegion === 'All Regions'
+    ? INDIAN_STATES
+    : INDIAN_STATES.filter(s => s.region.toLowerCase() === selectedRegion.toLowerCase());
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 space-y-8 font-sans">
+    <ProtectedRoute>
+      <div className="max-w-7xl mx-auto py-12 px-4 space-y-8 font-sans">
       {/* Header Section */}
       <div className="space-y-3">
         <div className="badge badge-green">
@@ -53,36 +66,58 @@ export default function ResellersDirectory() {
           </h1>
         </div>
         <p className="text-text-secondary text-sm max-w-2xl leading-relaxed">
-          Community-vetted merchants and regional account traders. Verified by peer trust votes and certified regional administrators.
+          Community-vetted merchants covering all 28 States & 8 Union Territories of India. Verified by peer trust votes and certified regional administrators.
         </p>
       </div>
 
       {/* Filter Controls Bar */}
       <div className="glass-panel rounded-2xl p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           {/* Search Box */}
-          <div className="relative flex-1">
+          <div className="relative md:col-span-6">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-accent-cyan pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by store name, telegram, phone..."
-              className="input-field pl-11 py-3 text-xs"
+              placeholder="Search store name, state (e.g. Maharashtra, Delhi), telegram..."
+              className="input-field pl-11 py-3 text-xs w-full"
             />
           </div>
 
           {/* Region Dropdown */}
-          <div className="sm:w-64 relative flex items-center">
+          <div className="md:col-span-3 relative flex items-center">
             <MapPin className="absolute left-4 w-4 h-4 text-accent-cyan pointer-events-none" />
             <select
               value={selectedRegion}
-              onChange={(e) => setSelectedRegion(e.target.value)}
-              className="input-field pl-11 py-3 text-xs appearance-none cursor-pointer"
+              onChange={(e) => {
+                setSelectedRegion(e.target.value);
+                setSelectedState('all');
+              }}
+              className="input-field pl-11 py-3 text-xs appearance-none cursor-pointer w-full bg-[#080a0f]"
             >
-              {regionsList.map((reg) => (
+              {INDIA_REGIONS.map((reg) => (
                 <option key={reg} value={reg} className="bg-[#080a0f] text-white">
-                  {reg === 'all' ? 'All Trading Regions' : reg}
+                  {reg}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* State Dropdown (All 36 States & UTs) */}
+          <div className="md:col-span-3 relative flex items-center">
+            <Building className="absolute left-4 w-4 h-4 text-accent-green pointer-events-none" />
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="input-field pl-11 py-3 text-xs appearance-none cursor-pointer w-full bg-[#080a0f]"
+            >
+              <option value="all" className="bg-[#080a0f] text-white">
+                All Indian States ({statesForSelectedRegion.length})
+              </option>
+              {statesForSelectedRegion.map((st) => (
+                <option key={st.code} value={st.name} className="bg-[#080a0f] text-white">
+                  {st.name}
                 </option>
               ))}
             </select>
@@ -91,12 +126,15 @@ export default function ResellersDirectory() {
 
         {/* Quick Region Pill Selectors */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-          {regionsList.map((reg) => {
+          {INDIA_REGIONS.map((reg) => {
             const isSelected = selectedRegion === reg;
             return (
               <button
                 key={reg}
-                onClick={() => setSelectedRegion(reg)}
+                onClick={() => {
+                  setSelectedRegion(reg);
+                  setSelectedState('all');
+                }}
                 className={`px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                   isSelected
                     ? 'bg-accent-green/20 text-accent-green border border-accent-green/40'
@@ -104,7 +142,7 @@ export default function ResellersDirectory() {
                 }`}
                 style={{ fontFamily: 'var(--font-h)' }}
               >
-                {reg === 'all' ? 'All Regions' : reg}
+                {reg}
               </button>
             );
           })}
@@ -136,6 +174,7 @@ export default function ResellersDirectory() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

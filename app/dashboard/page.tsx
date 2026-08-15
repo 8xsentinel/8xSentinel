@@ -7,33 +7,60 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, ShieldCheck, UserCircle, History, UploadCloud, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { MapPin } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, profile, isSuperAdmin, loading } = useAuth();
+  const router = useRouter();
 
-  const userRole: "customer" | "reseller" = "reseller"; 
+  const isAdmin = isSuperAdmin || profile?.role === "regional_admin" || profile?.role === "admin";
+  
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.push("/");
+      } else if (isAdmin) {
+        router.push("/admin");
+      }
+    }
+  }, [loading, user, isAdmin, router]);
 
-  if (loading) {
+  if (loading || !user || isAdmin) {
     return <div className="container py-24 text-center font-sans">Loading dashboard...</div>;
   }
 
+  const isReseller = profile?.role === "verified_reseller";
+  const userRoleDisplay = isReseller ? "reseller" : "standard";
   const displayName = user?.displayName || user?.email?.split('@')[0] || "Operator";
 
   return (
-    <div className="container py-12 max-w-6xl mx-auto space-y-8 font-sans">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: 'var(--font-h)' }}>Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {displayName}.</p>
+    <ProtectedRoute>
+      <div className="container py-12 max-w-6xl mx-auto space-y-8 font-sans">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: 'var(--font-h)' }}>Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, {displayName}.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {profile?.state && (
+              <Badge className="bg-accent-cyan/10 text-accent-cyan border-accent-cyan/30 px-3 py-1 font-mono text-xs flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                <span>{profile.state}</span>
+              </Badge>
+            )}
+            <Badge variant="outline" className="px-4 py-1 uppercase tracking-wider text-accent-green border-accent-green/50">
+              {userRoleDisplay} Account
+            </Badge>
+          </div>
         </div>
-        <Badge variant="outline" className="px-4 py-1 uppercase tracking-wider">
-          {userRole} Account
-        </Badge>
-      </div>
 
-      <Tabs defaultValue={userRole === "reseller" ? "profile" : "reports"} className="w-full space-y-6">
-        <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-          {userRole === "reseller" && (
+      <Tabs defaultValue={isReseller ? "profile" : "reports"} className="w-full space-y-6">
+        <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent flex-wrap gap-y-2">
+          {isReseller && (
             <>
               <TabsTrigger value="profile" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3">
                 My Profile
@@ -54,7 +81,7 @@ export default function DashboardPage() {
           </TabsTrigger>
         </TabsList>
 
-        {userRole === "reseller" && (
+        {isReseller && (
           <>
             <TabsContent value="profile" className="space-y-6">
               <Card>
@@ -75,26 +102,48 @@ export default function DashboardPage() {
             <TabsContent value="verification" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Verification Badges</CardTitle>
-                  <CardDescription>Apply for trust badges to increase your credibility.</CardDescription>
+                  <CardTitle>Merchant Verification Tiers</CardTitle>
+                  <CardDescription>View your current credentials and apply for elite trust badges.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-6 md:grid-cols-2">
-                  <div className="p-6 border rounded-lg space-y-4 relative overflow-hidden">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ShieldCheck className="w-6 h-6 text-blue-500" />
-                      <h3 className="font-semibold text-lg">Sentinel Verified</h3>
+                  {/* Tier 1: Sentinel Verified */}
+                  <div className="p-6 border border-accent-cyan/40 bg-accent-cyan/[0.03] rounded-xl space-y-4 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-6 h-6 text-accent-cyan" />
+                        <h3 className="font-semibold text-lg text-white">Sentinel Verified</h3>
+                      </div>
+                      <Badge className="bg-accent-green/20 text-accent-green border-accent-green/40 text-[10px] uppercase font-mono">
+                        ACTIVE (TIER 1)
+                      </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">Requires phone, telegram, instagram, and UPI verification.</p>
-                    <Button className="w-full">Apply Now</Button>
+                    <p className="text-xs text-text-secondary">
+                      Your identity and store handles have been verified by your State Regional Admin. You hold cryptographic merchant standing in the registry.
+                    </p>
+                    <div className="text-[11px] text-accent-green font-mono flex items-center gap-1.5 pt-2 border-t border-white/5">
+                      <span>✓ State Operating Clearance Granted</span>
+                    </div>
                   </div>
                   
-                  <div className="p-6 border rounded-lg space-y-4 relative overflow-hidden bg-muted/30 opacity-70">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ShieldCheck className="w-6 h-6 text-yellow-500" />
-                      <h3 className="font-semibold text-lg">Sentinel Trusted</h3>
+                  {/* Tier 2: Sentinel Trusted Reseller */}
+                  <div className="p-6 border border-accent-amber/40 bg-accent-amber/[0.03] rounded-xl space-y-4 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-6 h-6 text-accent-amber" />
+                        <h3 className="font-semibold text-lg text-white">Sentinel Trusted Reseller</h3>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] uppercase font-mono border-accent-amber/40 text-accent-amber">
+                        TIER 2 (ELITE)
+                      </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">Requires Sentinel Verified + Govt ID and Location Verification.</p>
-                    <Button variant="outline" className="w-full" disabled>Requires Sentinel Verified</Button>
+                    <p className="text-xs text-text-secondary">
+                      Elite trust seal for high-volume OG account traders. Includes highlighted merchant ranking, priority escrow, and gold verification badge.
+                    </p>
+                    <Link href="/apply-verification" className="block pt-2">
+                      <Button className="w-full bg-accent-amber/20 hover:bg-accent-amber/30 text-accent-amber border border-accent-amber/40 font-mono text-xs uppercase font-bold py-2.5">
+                        Apply for Sentinel Trusted Reseller
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
@@ -126,7 +175,7 @@ export default function DashboardPage() {
                   <CardTitle>My Submitted Reports</CardTitle>
                   <CardDescription>Track the status of your scam reports.</CardDescription>
                 </div>
-                <Link href="/file-report">
+                <Link href="/submit-report">
                   <Button size="sm">File New Report</Button>
                 </Link>
               </div>
@@ -157,8 +206,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </TabsContent>
-
       </Tabs>
     </div>
+  </ProtectedRoute>
   );
 }

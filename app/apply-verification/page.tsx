@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   DollarSign
 } from 'lucide-react';
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
 
 const Instagram = (props: React.ComponentProps<'svg'>) => (
   <svg
@@ -192,7 +193,8 @@ export default function ApplyVerificationPage() {
   ];
 
   return (
-    <div className="max-w-3xl mx-auto py-12 px-4 space-y-8 font-sans">
+    <ProtectedRoute>
+      <div className="max-w-3xl mx-auto py-12 px-4 space-y-8 font-sans">
       {/* Title Deck */}
       <div className="space-y-3">
         <div className="badge badge-green">
@@ -595,6 +597,7 @@ export default function ApplyVerificationPage() {
             </div>
           </div>
         )}
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

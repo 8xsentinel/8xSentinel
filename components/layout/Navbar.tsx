@@ -11,24 +11,19 @@ import {
   Menu,
   X,
   ShieldAlert,
-  ShieldCheck,
-  ChevronDown,
-  ExternalLink,
-  ArrowRightLeft,
+  Crown,
 } from "lucide-react";
 import AuthButton from "../auth/AuthButton";
 import { useAuth } from "../../lib/firebase/AuthContext";
 import { db } from "../../lib/db";
 import { Profile } from "../../types";
-import { toast } from "sonner";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const navRef = useRef<HTMLElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +41,6 @@ export default function Navbar() {
   // Close mobile drawer on route change
   useEffect(() => {
     setMobileOpen(false);
-    setRoleDropdownOpen(false);
   }, [pathname]);
 
   // Prevent body scroll when mobile menu open
@@ -72,24 +66,13 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleRoleChange = (role: "user" | "verified_reseller" | "regional_admin" | "admin") => {
-    const updated = db.setCurrentUser(role);
-    setUserProfile(updated);
-    setRoleDropdownOpen(false);
-    toast.success(`Access Clearance Updated: ${role.toUpperCase()}`, {
-      description: "System privileges updated for this session.",
-    });
-  };
-
   const navLinks = [
     { label: "Registry Lookup", href: "/search", icon: Search },
     { label: "File Report", href: "/submit-report", icon: FileSpreadsheet },
     { label: "Verified Resellers", href: "/resellers", icon: Users },
   ];
 
-  const isMod =
-    userProfile?.role === "regional_admin" ||
-    userProfile?.role === "admin";
+  const canAccessAdmin = isSuperAdmin || userProfile?.role === "regional_admin";
 
   const deskLinkStyle =
     "text-gray-300 hover:text-white font-sans text-[13.5px] font-medium tracking-wide px-3.5 py-2 transition-all duration-200 inline-flex items-center gap-1.5 rounded-lg hover:bg-white/5";
@@ -151,83 +134,32 @@ export default function Navbar() {
                 );
               })}
 
-              {user && isMod && (
+              {user && canAccessAdmin && (
                 <Link
                   href="/admin"
                   className={`${deskLinkStyle} ${
                     pathname.startsWith("/admin")
-                      ? "text-accent-purple bg-accent-purple/10 border-b-2 border-accent-purple"
+                      ? isSuperAdmin
+                        ? "text-accent-red bg-accent-red/10 border-b-2 border-accent-red"
+                        : "text-accent-purple bg-accent-purple/10 border-b-2 border-accent-purple"
+                      : isSuperAdmin
+                      ? "text-accent-red hover:bg-accent-red/5"
                       : "text-accent-purple hover:bg-accent-purple/5"
                   }`}
                 >
-                  <ShieldAlert className="w-4 h-4 text-accent-purple animate-pulse" />
-                  <span>Command Deck</span>
+                  {isSuperAdmin ? (
+                    <Crown className="w-4 h-4 text-accent-red animate-pulse" />
+                  ) : (
+                    <ShieldAlert className="w-4 h-4 text-accent-purple animate-pulse" />
+                  )}
+                  <span>{isSuperAdmin ? "Super Admin Deck" : "Command Deck"}</span>
                 </Link>
               )}
             </nav>
 
             {/* Right Actions & Auth */}
             <div className="hidden lg:flex items-center gap-4">
-              {user && (
-                <div className="relative">
-                  <button
-                    onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-accent-cyan/40 text-[11px] font-mono text-gray-300 transition-all select-none"
-                  >
-                    <ArrowRightLeft className="w-3 h-3 text-accent-cyan" />
-                    <span>
-                      Clearance:{" "}
-                      <span className="font-bold text-accent-cyan uppercase">
-                        {userProfile?.role || "Operator"}
-                      </span>
-                    </span>
-                  </button>
 
-                  {roleDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-52 glass-panel rounded-xl border border-white/10 shadow-2xl py-2 z-50 font-mono text-xs">
-                      <div className="px-4 py-2 border-b border-white/5 text-[10px] text-text-muted uppercase tracking-widest font-bold">
-                        Clearance Override
-                      </div>
-                      <button
-                        onClick={() => handleRoleChange("admin")}
-                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-accent-purple font-bold flex items-center justify-between"
-                      >
-                        <span>ADMIN DECK</span>
-                        {userProfile?.role === "admin" && (
-                          <span className="text-accent-purple">✓</span>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleRoleChange("regional_admin")}
-                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-accent-cyan font-bold flex items-center justify-between"
-                      >
-                        <span>REGIONAL ADMIN</span>
-                        {userProfile?.role === "regional_admin" && (
-                          <span className="text-accent-cyan">✓</span>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleRoleChange("verified_reseller")}
-                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-accent-amber font-bold flex items-center justify-between"
-                      >
-                        <span>VERIFIED RESELLER</span>
-                        {userProfile?.role === "verified_reseller" && (
-                          <span className="text-accent-amber">✓</span>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleRoleChange("user")}
-                        className="w-full text-left px-4 py-2.5 hover:bg-white/5 text-accent-green font-bold flex items-center justify-between"
-                      >
-                        <span>STANDARD USER</span>
-                        {userProfile?.role === "user" && (
-                          <span className="text-accent-green">✓</span>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <AuthButton />
             </div>
@@ -316,72 +248,28 @@ export default function Navbar() {
                 );
               })}
 
-              {user && isMod && (
+              {user && canAccessAdmin && (
                 <Link
                   href="/admin"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold text-accent-purple hover:bg-accent-purple/10 transition-colors"
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold transition-colors ${
+                    isSuperAdmin
+                      ? "text-accent-red hover:bg-accent-red/10"
+                      : "text-accent-purple hover:bg-accent-purple/10"
+                  }`}
                   style={{ fontFamily: "var(--font-h)" }}
                 >
-                  <ShieldAlert className="w-4 h-4 text-accent-purple" />
-                  <span>Command Deck</span>
+                  {isSuperAdmin ? (
+                    <Crown className="w-4 h-4 text-accent-red" />
+                  ) : (
+                    <ShieldAlert className="w-4 h-4 text-accent-purple" />
+                  )}
+                  <span>{isSuperAdmin ? "Super Admin Deck" : "Command Deck"}</span>
                 </Link>
               )}
             </div>
 
-            {/* Clearance selector for mobile */}
-            {user && (
-              <div className="pt-4 border-t border-white/10 space-y-2">
-                <span
-                  className="text-[10px] text-text-muted uppercase tracking-widest font-bold block"
-                  style={{ fontFamily: "var(--font-h)" }}
-                >
-                  Clearance Role
-                </span>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    onClick={() => handleRoleChange("admin")}
-                    className={`py-1.5 px-2 rounded text-[10px] font-mono font-bold uppercase transition-all ${
-                      userProfile?.role === "admin"
-                        ? "bg-accent-purple/20 text-accent-purple border border-accent-purple/40"
-                        : "bg-white/5 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    Admin
-                  </button>
-                  <button
-                    onClick={() => handleRoleChange("regional_admin")}
-                    className={`py-1.5 px-2 rounded text-[10px] font-mono font-bold uppercase transition-all ${
-                      userProfile?.role === "regional_admin"
-                        ? "bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40"
-                        : "bg-white/5 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    Reg. Admin
-                  </button>
-                  <button
-                    onClick={() => handleRoleChange("verified_reseller")}
-                    className={`py-1.5 px-2 rounded text-[10px] font-mono font-bold uppercase transition-all ${
-                      userProfile?.role === "verified_reseller"
-                        ? "bg-accent-amber/20 text-accent-amber border border-accent-amber/40"
-                        : "bg-white/5 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    Reseller
-                  </button>
-                  <button
-                    onClick={() => handleRoleChange("user")}
-                    className={`py-1.5 px-2 rounded text-[10px] font-mono font-bold uppercase transition-all ${
-                      userProfile?.role === "user"
-                        ? "bg-accent-green/20 text-accent-green border border-accent-green/40"
-                        : "bg-white/5 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    User
-                  </button>
-                </div>
-              </div>
-            )}
+
           </div>
 
           {/* Drawer Footer */}
