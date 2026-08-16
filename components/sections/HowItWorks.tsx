@@ -21,8 +21,8 @@ export default function HowItWorks() {
     },
     {
       step: '03',
-      title: 'Trade with Confidence',
-      desc: 'Transact only with verified merchants holding authentic regional endorsements, zero blacklist history, and proven buyer reputations.',
+      title: 'Deal with Trusted Resellers',
+      desc: 'Transact with authenticated BGMI store resellers operating verified WhatsApp and Telegram channels with zero blacklist flags.',
       icon: ShieldCheck,
       wrapClass: 'border-accent-green/30 bg-accent-green/10 text-accent-green shadow-[0_0_15px_rgba(34,197,94,0.2)]',
       cardClass: 'card-glow-green',

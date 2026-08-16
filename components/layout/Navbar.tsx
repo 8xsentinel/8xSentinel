@@ -12,6 +12,8 @@ import {
   X,
   ShieldAlert,
   Crown,
+  Sparkles,
+  User as UserIcon,
 } from "lucide-react";
 import AuthButton from "../auth/AuthButton";
 import { useAuth } from "../../lib/firebase/AuthContext";
@@ -23,13 +25,13 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const pathname = usePathname();
-  const { user, isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin, profile } = useAuth();
   const navRef = useRef<HTMLElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setUserProfile(user ? db.getCurrentUser() : null);
-  }, [user, pathname]);
+    setUserProfile(profile || null);
+  }, [profile, pathname]);
 
   // Scroll detection
   useEffect(() => {
@@ -155,6 +157,28 @@ export default function Navbar() {
                   <span>{isSuperAdmin ? "Super Admin Deck" : "Command Deck"}</span>
                 </Link>
               )}
+
+              {user && !canAccessAdmin && (
+                userProfile?.store_status === 'not_registered' || !userProfile?.store_status ? (
+                  <Link
+                    href="/dashboard"
+                    className="bg-accent-cyan/15 hover:bg-accent-cyan/25 text-accent-cyan border border-accent-cyan/40 px-3 py-1.5 rounded-lg text-xs font-mono font-bold tracking-wider uppercase flex items-center gap-1.5 animate-pulse ml-1 transition-all"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Complete Onboarding</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/dashboard"
+                    className={`${deskLinkStyle} ${
+                      pathname === "/dashboard" ? activeLinkStyle : ""
+                    }`}
+                  >
+                    <UserIcon className="w-4 h-4 text-accent-cyan opacity-80" />
+                    <span>Dashboard</span>
+                  </Link>
+                )
+              )}
             </nav>
 
             {/* Right Actions & Auth */}
@@ -248,24 +272,32 @@ export default function Navbar() {
                 );
               })}
 
-              {user && canAccessAdmin && (
-                <Link
-                  href="/admin"
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold transition-colors ${
-                    isSuperAdmin
-                      ? "text-accent-red hover:bg-accent-red/10"
-                      : "text-accent-purple hover:bg-accent-purple/10"
-                  }`}
-                  style={{ fontFamily: "var(--font-h)" }}
-                >
-                  {isSuperAdmin ? (
-                    <Crown className="w-4 h-4 text-accent-red" />
-                  ) : (
-                    <ShieldAlert className="w-4 h-4 text-accent-purple" />
-                  )}
-                  <span>{isSuperAdmin ? "Super Admin Deck" : "Command Deck"}</span>
-                </Link>
+              {user && !canAccessAdmin && (
+                userProfile?.store_status === 'not_registered' || !userProfile?.store_status ? (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/40"
+                    style={{ fontFamily: "var(--font-h)" }}
+                  >
+                    <Sparkles className="w-4 h-4 text-accent-cyan animate-pulse" />
+                    <span>Complete Onboarding</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold transition-colors ${
+                      pathname === "/dashboard"
+                        ? "text-accent-cyan bg-accent-cyan/10"
+                        : "text-gray-300 hover:text-white hover:bg-white/5"
+                    }`}
+                    style={{ fontFamily: "var(--font-h)" }}
+                  >
+                    <UserIcon className="w-4 h-4 text-accent-cyan" />
+                    <span>Dashboard</span>
+                  </Link>
+                )
               )}
             </div>
 

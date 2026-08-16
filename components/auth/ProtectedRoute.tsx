@@ -16,7 +16,10 @@ import {
   LogOut, 
   Edit3,
   Lock,
-  UserCheck
+  UserCheck,
+  MessageSquare,
+  Phone,
+  Send
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -46,7 +49,7 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
   const handleRefreshStatus = async () => {
     setRefreshing(true);
     if (user) {
-      const updatedProfile = refreshProfile ? refreshProfile() : null;
+      const updatedProfile = refreshProfile ? await refreshProfile() : null;
       const profileId = updatedProfile?.id || profile?.id || '';
       const app = await db.getUserStoreApplication(profileId);
       setStoreApp(app);
@@ -85,7 +88,7 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
             Access Denied
           </h2>
           <p className="text-text-secondary text-[13px] max-w-sm mx-auto leading-relaxed">
-            Authentication is strictly required to view the global scammer registry, verify state merchants, or file fraud reports.
+            Authentication is strictly required to view the global scammer registry, verify state resellers, or file fraud reports.
           </p>
         </div>
         <div className="pt-6 flex justify-center border-t border-white/5">
@@ -101,7 +104,7 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
     return <>{children}</>;
   }
 
-  // 4. Determine Effective Merchant Clearance Status
+  // 4. Determine Effective Reseller Clearance Status
   const effectiveStatus = storeApp?.verification_status || profile?.store_status;
   const isApproved = effectiveStatus === 'approved';
   const isPending = effectiveStatus === 'pending';
@@ -118,6 +121,7 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
     return (
       <div className="relative min-h-[60vh]">
         <StoreOnboardingModal
+          initialData={storeApp || profile}
           onComplete={async () => {
             setShowEditModal(false);
             if (refreshProfile) refreshProfile();
@@ -148,15 +152,15 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
 
           <div className="space-y-2">
             <span className="text-[10px] font-mono font-bold tracking-widest text-accent-amber uppercase px-3 py-1 rounded-full bg-accent-amber/10 border border-accent-amber/20 inline-block">
-              {isRejected ? 'Application Declined' : 'Merchant Approval Pending'}
+              {isRejected ? 'Application Declined' : 'Reseller Review Pending'}
             </span>
             <h2 className="text-2xl md:text-3xl font-bold uppercase text-white tracking-wide" style={{ fontFamily: 'var(--font-h)' }}>
               {isRejected ? 'Store Verification Declined' : 'Store Application Under Review'}
             </h2>
             <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
               {isRejected
-                ? storeApp?.rejection_reason || 'Your store application was not approved by regional moderators. You may update and resubmit your application.'
-                : `Your store profile has been submitted and is currently awaiting cryptographic clearance from the Root Super Admin or the Regional Admin of ${currentState}.`}
+                ? storeApp?.rejection_reason || 'Your store application was not approved by moderators. You may update and resubmit your application.'
+                : `Your store profile has been submitted and is currently awaiting clearance from the Root Super Admin or the Regional Admin of ${currentState}.`}
             </p>
           </div>
 
@@ -184,19 +188,34 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
                 Primary Network:
               </span>
               <span className="text-accent-cyan font-bold capitalize">
-                {storeApp?.primary_platform?.replace('_', ' ') || 'WhatsApp & Telegram'}
+                {storeApp?.primary_platform === 'whatsapp_only' ? 'WhatsApp Only' :
+                 storeApp?.primary_platform === 'telegram_only' ? 'Telegram Only' :
+                 storeApp?.primary_platform === 'whatsapp_primary' ? 'WhatsApp & Telegram (WA Primary)' :
+                 storeApp?.primary_platform === 'telegram_primary' ? 'WhatsApp & Telegram (TG Primary)' :
+                 storeApp?.primary_platform === 'both' ? 'WhatsApp & Telegram (Equal)' :
+                 'WhatsApp & Telegram'}
               </span>
             </div>
 
-            <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
-              <span className="text-text-muted flex items-center gap-1.5 font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-2.5 gap-2">
+              <span className="text-text-muted flex items-center gap-1.5 font-sans whitespace-nowrap">
+                <MessageSquare className="w-3.5 h-3.5 text-accent-cyan" />
                 Contact Channels:
               </span>
-              <span className="text-text-secondary">
-                {storeApp?.whatsapp_number && `WA: ${storeApp.whatsapp_number}`}
-                {storeApp?.whatsapp_number && storeApp?.telegram_username && ' | '}
-                {storeApp?.telegram_username && `TG: @${storeApp.telegram_username}`}
-              </span>
+              <div className="flex items-center justify-start sm:justify-end gap-2 flex-wrap">
+                {storeApp?.whatsapp_number && (
+                  <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-md text-emerald-400">
+                    <Phone className="w-3 h-3" />
+                    <span className="font-sans text-[11px] font-medium tracking-wide">{storeApp.whatsapp_number}</span>
+                  </div>
+                )}
+                {storeApp?.telegram_username && (
+                  <div className="flex items-center gap-1.5 bg-sky-500/10 border border-sky-500/20 px-2 py-1 rounded-md text-sky-400">
+                    <Send className="w-3 h-3" />
+                    <span className="font-sans text-[11px] font-medium tracking-wide">@{storeApp.telegram_username}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-1">

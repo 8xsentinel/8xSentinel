@@ -3,17 +3,61 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import TrustScoreRing from '../../../components/ui/TrustScoreRing';
-import { db } from '../../../lib/db';
-import { TrustedReseller, ResellerReview } from '../../../types';
+import TrustScoreRing from '@/components/ui/TrustScoreRing';
+import { db } from '@/lib/db';
 import { toast } from 'sonner';
-import { CheckCircle2, MessageSquare, Phone, Star, AlertTriangle, Calendar } from 'lucide-react';
+import { 
+  ShieldCheck, 
+  ShieldAlert,
+  MessageSquare, 
+  Phone, 
+  Send,
+  Star, 
+  AlertTriangle, 
+  Calendar,
+  MapPin,
+  ExternalLink,
+  Users,
+  CheckCircle,
+  Tag,
+  Zap,
+  Flame,
+  Gauge,
+  Crown,
+  Handshake,
+  ArrowUpRight,
+  Sparkles,
+  Lock,
+  Building2,
+  Share2,
+  ThumbsUp,
+  UserCheck,
+  Shield,
+  FileCheck2,
+  Award
+} from 'lucide-react';
+import { useAuth } from '@/lib/firebase/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-const Instagram = (props: React.ComponentProps<'svg'>) => (
+const WhatsAppLogo = (props: React.ComponentProps<'svg'>) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" {...props}>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+  </svg>
+);
+
+const TelegramLogo = (props: React.ComponentProps<'svg'>) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" {...props}>
+    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0Zm5.562 8.161c-.18.847-.96 4.966-1.36 7.106-.17.904-.5 1.206-.82 1.236-.697.064-1.226-.46-1.9-.902-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.912.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.751-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 7.002-3.015 3.333-1.386 4.025-1.627 4.477-1.635.099-.002.321.023.465.14.121.099.155.232.171.326.016.094.036.309.02.477Z"/>
+  </svg>
+);
+
+const InstagramLogo = (props: React.ComponentProps<'svg'>) => (
   <svg
     viewBox="0 0 24 24"
-    width="24"
-    height="24"
+    width="16"
+    height="16"
     stroke="currentColor"
     strokeWidth="2"
     fill="none"
@@ -27,54 +71,40 @@ const Instagram = (props: React.ComponentProps<'svg'>) => (
   </svg>
 );
 
-const Youtube = (props: React.ComponentProps<'svg'>) => (
-  <svg
-    viewBox="0 0 24 24"
-    width="24"
-    height="24"
-    stroke="currentColor"
-    strokeWidth="2"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 11.54a29 29 0 0 0 .46 5.12 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96 29 29 0 0 0 .46-5.12 29 29 0 0 0-.46-5.12z" />
-    <polygon points="9.75 15.02 15.5 11.54 9.75 8.06 9.75 15.02" />
-  </svg>
-);
+const specialtyMeta: Record<string, { label: string; icon: any; color: string; bg: string; border: string }> = {
+  budget_accounts: { label: 'Budget Accounts', icon: Tag, color: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/30' },
+  premium_accounts: { label: 'Premium Accounts', icon: Crown, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
+  uc_recharge: { label: 'UC Recharge', icon: Zap, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
+  xsuit_gifts: { label: 'X-Suit Gifts', icon: Flame, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
+  supercar_gifts: { label: 'Supercar Gifts', icon: Gauge, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/30' },
+};
 
 export default function ResellerProfilePage() {
   const params = useParams();
   const router = useRouter();
   const username = params.username as string;
 
-  const [reseller, setReseller] = useState<TrustedReseller | null>(null);
-  const [reviews, setReviews] = useState<ResellerReview[]>([]);
+  const [reseller, setReseller] = useState<any>(null);
+  const [votes, setVotes] = useState<any[]>([]);
+  const [escrowPartners, setEscrowPartners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Review Form States
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
-  const [dealType, setDealType] = useState('account_sale');
+  // Escrow Request Modal
+  const [selectedEscrowPartner, setSelectedEscrowPartner] = useState<any>(null);
+
+  // Voting & Partnership Action State
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const { profile } = useAuth();
 
   const fetchResellerDetails = async () => {
     if (username) {
-      const data = await db.getResellerByUsername(username);
+      setLoading(true);
+      const data = await db.getResellerProfile(username);
       if (data) {
         setReseller(data.reseller);
-        setReviews(data.reviews);
-      } else {
-        // If not found by username, try direct ID matching
-        const resellersList = await db.getResellers();
-        const directIdMatch = resellersList.find(r => r.id === username);
-        if (directIdMatch && directIdMatch.profile) {
-          const directData = await db.getResellerByUsername(directIdMatch.profile.username);
-          if (directData) {
-            setReseller(directData.reseller);
-            setReviews(directData.reviews);
-          }
-        }
+        setVotes(data.votes || []);
+        setEscrowPartners(data.escrowPartners || []);
       }
       setLoading(false);
     }
@@ -84,429 +114,670 @@ export default function ResellerProfilePage() {
     fetchResellerDetails();
   }, [username]);
 
-  const handleReviewSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleVoteTrust = async () => {
     if (!reseller) return;
-
-    const userSession = db.getCurrentUser();
-    if (!userSession) {
-      toast.error('Authentication required. Switch test role in the header to post reviews.');
+    if (!profile?.id) {
+      toast.error('Please authenticate to vouch for this reseller.');
       return;
     }
 
-    if (!comment.trim()) {
-      toast.error('Review comments cannot be empty.');
-      return;
-    }
+    setActionLoading(true);
+    const result = await db.voteResellerTrust(reseller.id, profile.id);
+    setActionLoading(false);
 
-    const review = await db.submitResellerReview(reseller.id, rating, comment, dealType);
-    if (review) {
-      toast.success('Feedback published successfully!');
-      setComment('');
-      await fetchResellerDetails(); // reload profile stats and reviews list
+    if (result?.success) {
+      toast.success(result.message || 'Peer Trust Vouch recorded!');
+      await fetchResellerDetails();
+    } else {
+      toast.error(result?.message || 'Could not register vouch.');
     }
   };
 
-  const handlePeerVote = async (voteType: 'trust' | 'distrust') => {
+  const handleToggleEscrowPartnership = async () => {
     if (!reseller) return;
-    const userSession = db.getCurrentUser();
-    if (!userSession) {
-      toast.error('Authentication required. Log in to vote on reseller trust.');
+    if (!profile?.id) {
+      toast.error('Please log in with an authorized reseller account.');
       return;
     }
 
-    const updated = await db.voteReseller(reseller.id, voteType);
-    if (updated) {
-      toast.success(voteType === 'trust' ? 'Trust vote recorded!' : 'Distrust vote recorded!');
+    setActionLoading(true);
+    const result = await db.toggleEscrowPartner(reseller.id, profile.id);
+    setActionLoading(false);
+
+    if (result?.success) {
+      toast.success(result.message || 'Escrow partnership updated!');
       await fetchResellerDetails();
     } else {
-      toast.error('Failed to register vote.');
+      toast.error(result?.message || 'Failed to update escrow partnership.');
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Store profile link copied to clipboard!');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg-void flex flex-col font-mono text-xs text-text-muted justify-center items-center">
-        <span className="w-8 h-8 border-4 border-accent-green border-t-transparent rounded-full animate-spin"></span>
-        <p className="mt-2 uppercase tracking-widest">Verifying Agent Credentials...</p>
+      <div className="min-h-[70vh] flex flex-col font-mono text-xs text-text-muted justify-center items-center gap-4">
+        <div className="w-12 h-12 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin shadow-[0_0_30px_rgba(0,184,255,0.3)]" />
+        <p className="uppercase tracking-widest text-white">Loading Sentinel Reseller Dossier...</p>
       </div>
     );
   }
 
   if (!reseller) {
     return (
-      <div className="max-w-xl mx-auto py-20 px-4 text-center font-sans space-y-4">
-        <AlertTriangle className="w-12 h-12 text-accent-amber mx-auto" />
-        <h2 className="text-xl font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-h)' }}>
-          Profile Not Found
-        </h2>
-        <p className="text-text-secondary text-xs font-sans">
-          The requested trader profile name is either suspended, rejected, or unregistered.
-        </p>
-        <button
-          onClick={() => router.push('/resellers')}
-          className="btn btn-outline py-2 px-4 text-xs"
-        >
-          &larr; Back to Directory
-        </button>
+      <div className="max-w-md mx-auto py-24 px-4 text-center font-sans space-y-6">
+        <div className="w-20 h-20 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 flex items-center justify-center mx-auto text-accent-amber shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+          <AlertTriangle className="w-10 h-10" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-h)' }}>
+            Reseller Not Found
+          </h2>
+          <p className="text-text-secondary text-xs leading-relaxed">
+            The requested trader profile name is either suspended, pending review, or not registered in the Sentinel database.
+          </p>
+        </div>
+        <Link href="/resellers" className="inline-block">
+          <Button variant="outline" className="text-xs uppercase font-mono border-white/20">
+            &larr; Back to Verified Directory
+          </Button>
+        </Link>
       </div>
     );
   }
 
-  // Calculating positive review rating average
-  const totalFeedback = reseller.positive_feedback + reseller.negative_feedback;
-  const ratingPct = totalFeedback > 0 ? Math.round((reseller.positive_feedback / totalFeedback) * 100) : 100;
-  const starsCount = Math.round((ratingPct / 100) * 5);
+  const isTier2 = reseller.tier2_status === 'approved' || reseller.tier === 2;
+  const storeName = reseller.store_name || reseller.storeName || 'BGMI Store';
+  const avatar = reseller.profile?.avatar_url || reseller.profile?.avatarUrl;
+  const state = reseller.state || reseller.profile?.state || 'Tamil Nadu';
+  const operatingSince = reseller.operating_since_year || reseller.operatingSinceYear || 2019;
+  const yearsActive = Math.max(1, new Date().getFullYear() - operatingSince);
+  const primaryPlatform = reseller.primary_platform || reseller.primaryPlatform || 'both';
+  const whatsappNumber = reseller.whatsapp_number || reseller.whatsappNumber;
+  const whatsappUsername = reseller.whatsapp_username || reseller.whatsappUsername;
+  const whatsappGroupLink = reseller.whatsapp_group_link || reseller.whatsappGroupLink;
+  const telegramUsername = reseller.telegram_username || reseller.telegramUsername;
+  const telegramChannelLink = reseller.telegram_channel_link || reseller.telegramChannelLink;
+  const instagramUsername = reseller.instagram_username || reseller.instagramUsername;
+  const bio = reseller.bio || "Authorized BGMI merchant operating with verified trust credentials on 8xSentinel.";
+  const specialtiesList: string[] = reseller.specializes_in || reseller.specializesIn || ['budget_accounts', 'premium_accounts', 'uc_recharge'];
+  const trustScore = reseller.trust_score ?? 30;
+
+  // Check if current user is another verified reseller
+  const isCurrentUserVerifiedReseller = (profile?.role === 'verified_reseller' || profile?.store_status === 'approved') && profile?.id !== reseller.profile_id;
+  const hasCurrentUserPartnered = escrowPartners.some(p => p.store?.profile_id === profile?.id || p.store?.profileId === profile?.id);
+  const hasCurrentUserVouched = votes.some(v => v.voter_id === profile?.id || v.voterId === profile?.id);
 
   return (
-    <div className="max-w-5xl mx-auto py-12 px-4 space-y-8 font-sans">
-      {/* Banner Area and header */}
-      <div className="glass-panel card-glow-green rounded-2xl p-6 relative overflow-hidden">
-          {/* Neon corner overlay */}
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-accent-green/10 to-transparent pointer-events-none"></div>
+    <div className="max-w-6xl mx-auto py-10 px-4 space-y-8 font-sans">
+      
+      {/* Top Breadcrumb & Action Bar */}
+      <div className="flex items-center justify-between gap-4 text-xs font-mono">
+        <Link href="/resellers" className="text-text-muted hover:text-accent-cyan transition-colors flex items-center gap-1.5">
+          <span>&larr; Verified Resellers Directory</span>
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyLink}
+            className="text-[11px] font-mono border-white/10 hover:bg-white/5 flex items-center gap-1.5"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>Share Profile</span>
+          </Button>
+
+          {isCurrentUserVerifiedReseller && (
+            <Button
+              size="sm"
+              onClick={handleToggleEscrowPartnership}
+              disabled={actionLoading}
+              className={`text-[11px] font-mono font-bold flex items-center gap-1.5 ${
+                hasCurrentUserPartnered
+                  ? 'bg-accent-red/20 text-accent-red border border-accent-red/40 hover:bg-accent-red/30'
+                  : 'bg-accent-amber/20 text-accent-amber border border-accent-amber/40 hover:bg-accent-amber/30'
+              }`}
+            >
+              <Handshake className="w-3.5 h-3.5" />
+              <span>{hasCurrentUserPartnered ? 'Leave Escrow Network' : '🤝 Partner as Escrow'}</span>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Hero Showcase Card */}
+      <div className="relative rounded-3xl border border-white/15 bg-gradient-to-b from-[#0e1322] via-[#090c14] to-[#07090f] p-6 md:p-8 overflow-hidden shadow-[0_0_80px_rgba(0,184,255,0.08)]">
+        {/* Glow Top Highlight */}
+        <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${isTier2 ? 'from-amber-500 via-yellow-400 to-amber-500' : 'from-accent-cyan via-accent-blue to-accent-cyan'}`} />
+
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="relative w-16 h-16 rounded bg-bg-elevated border border-border-subtle flex items-center justify-center font-bold text-accent-green text-2xl font-display">
-                {reseller.store_name.slice(0, 2).toUpperCase()}
-                <div className="absolute -bottom-1 -right-1 bg-bg-void rounded-full p-0.5">
-                  <CheckCircle2 className="w-5 h-5 text-accent-green fill-bg-void" />
+          {/* Left: Avatar & Identity Details */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            {/* Avatar */}
+            <div className="relative shrink-0">
+              {avatar ? (
+                <img
+                  src={avatar}
+                  alt={storeName}
+                  className={`w-24 h-24 rounded-3xl border-2 object-cover ${
+                    isTier2 
+                      ? 'border-accent-amber shadow-[0_0_30px_rgba(245,158,11,0.35)]' 
+                      : 'border-accent-cyan shadow-[0_0_30px_rgba(0,184,255,0.3)]'
+                  }`}
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-accent-cyan/20 to-accent-blue/30 border-2 border-accent-cyan/60 flex items-center justify-center font-bold text-3xl text-accent-cyan font-mono shadow-[0_0_30px_rgba(0,184,255,0.3)]">
+                  {storeName.slice(0, 2).toUpperCase()}
                 </div>
+              )}
+              <div className="absolute -bottom-2 -right-2 bg-black/90 p-1.5 rounded-full border border-white/20">
+                {isTier2 ? (
+                  <Crown className="w-5 h-5 text-accent-amber" />
+                ) : (
+                  <ShieldCheck className="w-5 h-5 text-accent-cyan" />
+                )}
               </div>
+            </div>
+
+            {/* Title & Metadata */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-black uppercase tracking-wide text-white" style={{ fontFamily: 'var(--font-h)' }}>
+                  {storeName}
+                </h1>
+                
+                <Badge className={`text-[11px] uppercase font-mono tracking-wider px-3 py-1 flex items-center gap-1.5 ${
+                  isTier2 
+                    ? 'bg-accent-amber/20 text-accent-amber border-accent-amber/50 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                    : 'bg-accent-cyan/20 text-accent-cyan border-accent-cyan/50 shadow-[0_0_20px_rgba(0,184,255,0.25)]'
+                }`}>
+                  {isTier2 ? <Crown className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                  <span>{isTier2 ? 'Sentinel Trusted Elite' : 'Sentinel Verified Reseller'}</span>
+                </Badge>
+              </div>
+
+              {/* Tag badges */}
+              <div className="flex items-center gap-2.5 text-xs text-text-secondary flex-wrap font-mono">
+                <span className="flex items-center gap-1.5 text-accent-amber font-bold px-2.5 py-0.5 rounded-md bg-accent-amber/10 border border-accent-amber/20">
+                  <MapPin className="w-3.5 h-3.5" />
+                  {state} (India)
+                </span>
+                
+                <span className="flex items-center gap-1.5 text-white/80 px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10">
+                  <Calendar className="w-3.5 h-3.5 text-accent-cyan" />
+                  In Trade Since {operatingSince} ({yearsActive} Yrs)
+                </span>
+
+                <span className="flex items-center gap-1.5 text-emerald-400 px-2.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  State Operating Clearance Granted
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Radial Trust Score Ring */}
+          <div className="flex items-center gap-6 w-full lg:w-auto justify-between lg:justify-end border-t lg:border-t-0 border-white/10 pt-4 lg:pt-0">
+            <div className="text-left lg:text-right space-y-1">
+              <span className="text-[10px] text-text-muted uppercase tracking-widest block font-bold font-mono">
+                Sentinel Trust Rating
+              </span>
+              <div className="text-2xl md:text-3xl font-black font-mono text-white">
+                {trustScore}<span className="text-text-muted text-sm font-normal">/100</span>
+              </div>
+              <p className="text-[11px] text-accent-green font-mono">
+                {votes.length} Peer Reseller Vouch{votes.length === 1 ? '' : 'es'}
+              </p>
+            </div>
+
+            <TrustScoreRing score={trustScore} size={76} type="reseller" />
+          </div>
+        </div>
+
+        {/* Core Metric Counters Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10 text-center font-mono">
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+            <span className="text-text-muted block uppercase text-[10px] tracking-wider mb-0.5">Operating Experience</span>
+            <span className="text-lg font-bold text-white">{yearsActive} Years Active</span>
+          </div>
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+            <span className="text-text-muted block uppercase text-[10px] tracking-wider mb-0.5">Peer Vouches</span>
+            <span className="text-lg font-bold text-accent-cyan">{votes.length}</span>
+          </div>
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+            <span className="text-text-muted block uppercase text-[10px] tracking-wider mb-0.5">Escrow Middlemen</span>
+            <span className="text-lg font-bold text-accent-amber">{escrowPartners.length}</span>
+          </div>
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+            <span className="text-text-muted block uppercase text-[10px] tracking-wider mb-0.5">Security Status</span>
+            <span className="text-lg font-bold text-emerald-400">100% Vetted</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Grid: Direct Trade Deck & Escrow Network */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left 2 Cols: Direct Channels & Escrow Network */}
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* 1. Direct Contact & Operating Channels Deck */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-accent-cyan font-mono flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-accent-cyan" />
+                <span>Direct Verified Trading Channels</span>
+              </h2>
+              <span className="text-[10px] text-text-muted font-mono uppercase">
+                Active Protocol: <strong className="text-white">{primaryPlatform.replace(/_/g, ' ')}</strong>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl md:text-3xl font-bold font-display uppercase tracking-wider text-text-primary">
-                    {reseller.store_name}
-                  </h1>
-                  {reseller.badges.map((badge, bIdx) => (
-                    <span key={bIdx} className="bg-accent-green/15 text-accent-green border border-accent-green/20 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider">
-                      {badge.type.replace('_', ' ')}
+              {/* WhatsApp Action Card */}
+              {whatsappNumber ? (
+                <div className="p-5 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 backdrop-blur-md space-y-3 shadow-[0_0_30px_rgba(16,185,129,0.05)]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 font-mono">
+                      <WhatsAppLogo />
+                      <span>WhatsApp Store Gateway</span>
                     </span>
-                  ))}
+                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[9px] font-mono uppercase">
+                      VERIFIED DIRECT
+                    </Badge>
+                  </div>
+
+                  <div className="text-sm font-bold text-white font-mono">
+                    {whatsappNumber}
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    <a
+                      href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>Chat Directly on WhatsApp</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </a>
+
+                    {whatsappGroupLink && (
+                      <a
+                        href={whatsappGroupLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/10 text-xs font-medium flex items-center justify-center gap-2 transition-all truncate"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Join Official WA Store Group</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-text-secondary font-sans leading-normal">
-                  {reseller.tagline || 'Verified Trading Reseller Store'}
+              ) : null}
+
+              {/* Telegram Action Card */}
+              {telegramUsername ? (
+                <div className="p-5 rounded-2xl border border-sky-500/30 bg-sky-950/20 backdrop-blur-md space-y-3 shadow-[0_0_30px_rgba(14,165,233,0.05)]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-sky-400 flex items-center gap-1.5 font-mono">
+                      <TelegramLogo />
+                      <span>Telegram Protocol Gateway</span>
+                    </span>
+                    <Badge className="bg-sky-500/20 text-sky-300 border-sky-500/40 text-[9px] font-mono uppercase">
+                      SECURE DM
+                    </Badge>
+                  </div>
+
+                  <div className="text-sm font-bold text-white font-mono">
+                    @{telegramUsername.replace('@', '')}
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    <a
+                      href={`https://t.me/${telegramUsername.replace('@', '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full py-2 px-3 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Open Telegram DM</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </a>
+
+                    {telegramChannelLink && (
+                      <a
+                        href={telegramChannelLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/10 text-xs font-medium flex items-center justify-center gap-2 transition-all truncate"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Join Telegram Store Channel</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {/* 2. Official Verified Escrow Middlemen Hub */}
+          <div className="p-6 rounded-3xl border border-accent-amber/30 bg-gradient-to-b from-accent-amber/[0.04] to-transparent backdrop-blur-md space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-accent-amber/20 pb-4">
+              <div>
+                <h2 className="text-base font-bold uppercase tracking-wide text-accent-amber font-mono flex items-center gap-2">
+                  <Handshake className="w-5 h-5 text-accent-amber" />
+                  <span>Verified Escrow Middleman Network</span>
+                </h2>
+                <p className="text-xs text-text-secondary mt-1">
+                  Want 100% deal safety? Choose any of these vetted peer resellers to act as your independent Escrow Agent.
+                </p>
+              </div>
+
+              {isCurrentUserVerifiedReseller && (
+                <Button
+                  size="sm"
+                  onClick={handleToggleEscrowPartnership}
+                  disabled={actionLoading}
+                  className={`text-xs font-mono uppercase font-bold shrink-0 ${
+                    hasCurrentUserPartnered
+                      ? 'bg-accent-red/20 text-accent-red border border-accent-red/40 hover:bg-accent-red/30'
+                      : 'bg-accent-amber/20 text-accent-amber border border-accent-amber/40 hover:bg-accent-amber/30'
+                  }`}
+                >
+                  <Handshake className="w-3.5 h-3.5 mr-1" />
+                  <span>{hasCurrentUserPartnered ? 'Leave Escrow Network' : '🤝 Join as Escrow Partner'}</span>
+                </Button>
+              )}
+            </div>
+
+            {/* Escrow Partner Cards */}
+            {escrowPartners.length === 0 ? (
+              <div className="p-8 border border-dashed border-white/10 rounded-2xl text-center space-y-3">
+                <Lock className="w-10 h-10 text-accent-amber/60 mx-auto" />
+                <p className="text-xs text-text-muted font-mono">
+                  No designated peer escrow partners linked yet. All deals remain protected under 8xSentinel standard verification.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {escrowPartners.map((partner) => {
+                  const partnerStore = partner.store;
+                  if (!partnerStore) return null;
+                  const partnerAvatar = partnerStore.profile?.avatar_url || partnerStore.profile?.avatarUrl;
+                  const partnerName = partnerStore.store_name || partnerStore.storeName || 'Partner Store';
+                  const partnerScore = partnerStore.trust_score ?? 50;
+
+                  return (
+                    <div
+                      key={partner.id}
+                      className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-accent-amber/40 transition-all flex flex-col justify-between gap-3 space-y-2"
+                    >
+                      <div className="flex items-center gap-3">
+                        {partnerAvatar ? (
+                          <img src={partnerAvatar} alt={partnerName} className="w-10 h-10 rounded-xl border border-white/20 object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-accent-amber/10 border border-accent-amber/30 flex items-center justify-center font-bold text-accent-amber font-mono">
+                            {partnerName.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="space-y-0.5 min-w-0 flex-1">
+                          <h4 className="font-bold text-sm text-white truncate uppercase font-mono">{partnerName}</h4>
+                          <p className="text-[11px] text-accent-amber font-mono flex items-center gap-1">
+                            <span>★ Trust Score: {partnerScore}/100</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] text-text-secondary italic line-clamp-2">
+                        "{partner.terms || 'Verified Middleman on 8xSentinel.'}"
+                      </div>
+
+                      <Button
+                        size="sm"
+                        onClick={() => setSelectedEscrowPartner(partnerStore)}
+                        className="w-full bg-accent-amber/15 hover:bg-accent-amber/25 text-accent-amber border border-accent-amber/40 text-xs font-mono font-bold flex items-center justify-center gap-1.5"
+                      >
+                        <Lock className="w-3 h-3" />
+                        <span>Request Escrow via {partnerName}</span>
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 3. State Clearance & Verification Audit Deck */}
+          <div className="p-6 rounded-3xl border border-white/10 bg-white/[0.02] space-y-4">
+            <h3 className="text-xs font-bold text-accent-cyan uppercase tracking-wider font-mono flex items-center gap-2 border-b border-white/10 pb-3">
+              <FileCheck2 className="w-4 h-4 text-accent-cyan" />
+              <span>Sentinel Merchant Verification Audit</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
+                <span className="text-text-muted text-[10px] uppercase">State Clearance</span>
+                <p className="font-bold text-white flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-accent-amber" />
+                  {state} (South/North)
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
+                <span className="text-text-muted text-[10px] uppercase">Identity Clearance</span>
+                <p className="font-bold text-emerald-400 flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Google ID Verified
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
+                <span className="text-text-muted text-[10px] uppercase">Tier Distinction</span>
+                <p className="font-bold text-accent-cyan flex items-center gap-1">
+                  {isTier2 ? <Crown className="w-3.5 h-3.5 text-accent-amber" /> : <ShieldCheck className="w-3.5 h-3.5 text-accent-cyan" />}
+                  {isTier2 ? 'Sentinel Trusted' : 'Sentinel Verified'}
                 </p>
               </div>
             </div>
-
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <span className="text-[10px] text-text-muted uppercase tracking-widest block font-bold">Reputation Score</span>
-                <span className="text-2xl font-bold text-accent-green">{ratingPct}% Positive</span>
-                <p className="text-[9px] text-text-muted">From {totalFeedback} community reviews</p>
-              </div>
-              <TrustScoreRing score={reseller.trust_score} size={64} type="reseller" />
-            </div>
-          </div>
-
-          {/* Core metrics strip banner */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border-subtle/30 text-center font-mono text-xs">
-            <div className="border-r border-border-subtle/30 last:border-0">
-              <span className="text-text-muted block uppercase text-[10px] tracking-wider">Deals Completed</span>
-              <span className="text-lg font-bold text-text-primary">{reseller.deals_completed}</span>
-            </div>
-            <div className="border-r border-border-subtle/30 last:border-0">
-              <span className="text-text-muted block uppercase text-[10px] tracking-wider">Positive Reviews</span>
-              <span className="text-lg font-bold text-accent-green">{reseller.positive_feedback}</span>
-            </div>
-            <div className="border-r border-border-subtle/30 last:border-0">
-              <span className="text-text-muted block uppercase text-[10px] tracking-wider">Years Active</span>
-              <span className="text-lg font-bold text-accent-cyan">{reseller.years_active}</span>
-            </div>
-            <div className="last:border-0">
-              <span className="text-text-muted block uppercase text-[10px] tracking-wider">Claims Filed</span>
-              <span className={`text-lg font-bold ${reseller.scam_report_count && reseller.scam_report_count > 0 ? 'text-accent-red font-bold' : 'text-text-secondary'}`}>
-                {reseller.scam_report_count || 0}
-              </span>
-            </div>
           </div>
         </div>
 
-        {/* Bio & Contact grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Right 1 Col: Peer Reseller Vouches, Store Bio & Specialties */}
+        <div className="space-y-6">
           
-          <div className="md:col-span-2 space-y-6">
-            
-            {/* Bio Card */}
-            <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-6 space-y-4">
-              <h3 className="text-xs font-bold text-accent-green uppercase tracking-wider border-b border-border-subtle/30 pb-2">
-                Merchant Description
-              </h3>
-              <p className="text-sm font-sans text-text-secondary leading-relaxed">
-                {reseller.bio || 'This merchant has not updated their bio details yet.'}
-              </p>
-
-              {/* Specialties tags */}
-              <div className="space-y-2 pt-2">
-                <span className="text-[10px] text-text-muted uppercase tracking-widest block font-bold">Specialties:</span>
-                <div className="flex flex-wrap gap-2">
-                  {reseller.specializes_in.map(spec => (
-                    <span key={spec} className="px-3 py-1 rounded bg-white/[0.03] border border-border-subtle/60 text-xs text-text-secondary">
-                      {spec.replace('_', ' ').toUpperCase()}
-                    </span>
-                  ))}
-                </div>
-              </div>
+          {/* Peer Reseller Vouches Wall Card */}
+          <div className="p-6 rounded-3xl border border-accent-cyan/30 bg-accent-cyan/[0.02] space-y-4">
+            <div className="flex items-center justify-between border-b border-accent-cyan/20 pb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-accent-cyan font-mono flex items-center gap-1.5">
+                <Users className="w-4 h-4" />
+                <span>Peer Reseller Vouches ({votes.length})</span>
+              </span>
+              <Badge className="bg-accent-cyan/15 text-accent-cyan border-accent-cyan/30 text-[9px] font-mono">
+                TRUSTED
+              </Badge>
             </div>
 
-            {/* Review lists section */}
-            <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-6 space-y-6">
-              <h3 className="text-xs font-bold text-accent-green uppercase tracking-wider border-b border-border-subtle/30 pb-2">
-                Community Feedback ({reviews.length})
-              </h3>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Verified fellow resellers who have personally traded and vouched for this store.
+            </p>
 
-              {reviews.length === 0 ? (
-                <p className="text-xs text-text-muted italic text-center py-4">No reviews logged for this store directory yet.</p>
-              ) : (
-                <div className="space-y-4">
-                  {reviews.map(rev => (
-                    <div key={rev.id} className="p-4 rounded border border-border-subtle/50 bg-white/[0.01] space-y-2 text-xs">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={rev.reviewer?.avatar_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=user'}
-                            alt="reviewer avatar"
-                            className="w-6 h-6 rounded border border-border-subtle bg-bg-surface"
-                          />
-                          <span className="font-bold text-text-primary">{rev.reviewer?.display_name || rev.reviewer?.username || 'Trader'}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 font-mono text-accent-amber font-bold">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star key={i} className={`w-3 h-3 ${i < rev.rating ? 'fill-accent-amber' : 'text-text-muted'}`} />
-                          ))}
-                          <span className="text-text-secondary ml-1">({rev.rating}/5)</span>
-                        </div>
-                      </div>
-
-                      <p className="font-sans text-text-secondary leading-relaxed pl-8">
-                        {rev.comment}
-                      </p>
-
-                      <div className="pl-8 flex justify-between text-[10px] text-text-muted font-mono uppercase">
-                        <span>Deal type: {rev.deal_type?.replace('_', ' ')}</span>
-                        <span>{new Date(rev.created_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  ))}
+            {/* List of vouches */}
+            <div className="space-y-2 max-h-56 overflow-y-auto">
+              {votes.length === 0 ? (
+                <div className="p-4 border border-dashed border-white/10 rounded-xl text-center text-xs text-text-muted font-mono">
+                  No peer vouches yet.
                 </div>
+              ) : (
+                votes.map((v) => (
+                  <div key={v.id} className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <img
+                        src={v.voter?.avatar_url || v.voter?.avatarUrl || 'https://api.dicebear.com/7.x/identicon/svg?seed=user'}
+                        alt="Voter"
+                        className="w-5 h-5 rounded-full border border-white/20 object-cover"
+                      />
+                      <span className="font-bold text-white truncate font-mono text-[11px]">
+                        {v.voter?.display_name || v.voter?.displayName || v.voter?.username || 'Verified Reseller'}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-accent-green font-mono shrink-0 flex items-center gap-1">
+                      <ThumbsUp className="w-2.5 h-2.5" /> Vouched
+                    </span>
+                  </div>
+                ))
               )}
             </div>
+
+            {/* Vouch Button */}
+            <Button
+              onClick={handleVoteTrust}
+              disabled={actionLoading || hasCurrentUserVouched || profile?.id === reseller.profile_id}
+              className={`w-full text-xs font-mono uppercase font-bold py-2.5 transition-all ${
+                hasCurrentUserVouched
+                  ? 'bg-accent-green/20 text-accent-green border border-accent-green/40'
+                  : 'bg-accent-cyan/20 hover:bg-accent-cyan/30 text-accent-cyan border border-accent-cyan/40 shadow-[0_0_15px_rgba(0,184,255,0.2)]'
+              }`}
+            >
+              <ThumbsUp className="w-3.5 h-3.5 mr-1.5" />
+              <span>{hasCurrentUserVouched ? '✓ You Vouched for this Store' : '+1 Vouch as Trusted Reseller'}</span>
+            </Button>
           </div>
 
-          <div className="space-y-6">
-            {/* Peer Trust Vote Card */}
-            <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle hover:border-accent-cyan/30 rounded-xl p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-border-subtle/30 pb-2">
-                <h3 className="text-xs font-bold text-accent-cyan uppercase tracking-wider flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-accent-cyan" />
-                  Peer Reseller Verification
-                </h3>
-              </div>
-              <p className="text-[11px] text-text-secondary font-sans leading-relaxed">
-                Verified resellers can vote to vouch for this merchant's legitimacy or flag suspicion.
-              </p>
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handlePeerVote('trust')}
-                  className="flex-1 bg-accent-green/10 border border-accent-green/30 hover:bg-accent-green/20 text-accent-green font-bold font-mono py-2.5 rounded text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+          {/* Specialties & Trading Focus */}
+          <div className="p-6 rounded-3xl border border-white/10 bg-white/[0.02] space-y-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-text-muted font-mono flex items-center gap-1.5 border-b border-white/10 pb-3">
+              <Tag className="w-4 h-4 text-accent-amber" />
+              <span>Approved Trading Catalog</span>
+            </span>
+
+            <div className="flex flex-wrap gap-2">
+              {specialtiesList.map((id) => {
+                const meta = specialtyMeta[id] || { label: id.replace(/_/g, ' '), icon: Tag, color: 'text-accent-cyan', bg: 'bg-white/5', border: 'border-white/10' };
+                const IconComponent = meta.icon;
+                return (
+                  <span
+                    key={id}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 ${meta.bg} ${meta.border} ${meta.color}`}
+                  >
+                    <IconComponent className="w-3.5 h-3.5" />
+                    <span>{meta.label}</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Store Bio & Verification Seal */}
+          <div className="p-6 rounded-3xl border border-white/10 bg-white/[0.02] space-y-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-text-muted font-mono flex items-center gap-1.5 border-b border-white/10 pb-3">
+              <Building2 className="w-4 h-4 text-accent-cyan" />
+              <span>Store Bio & Integrity</span>
+            </span>
+
+            <p className="text-xs text-text-secondary leading-relaxed italic border-l-2 border-accent-cyan/40 pl-3 py-1">
+              "{bio}"
+            </p>
+
+            {instagramUsername && (
+              <div className="pt-2 border-t border-white/5">
+                <a
+                  href={`https://instagram.com/${instagramUsername.replace('@', '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-3 rounded-xl border border-pink-500/30 bg-pink-950/20 text-pink-300 text-xs font-mono flex items-center justify-between hover:bg-pink-950/30 transition-all"
                 >
-                  <span>👍 Vote Trusted</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePeerVote('distrust')}
-                  className="flex-1 bg-accent-red/10 border border-accent-red/30 hover:bg-accent-red/20 text-accent-red font-bold font-mono py-2.5 rounded text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1"
-                >
-                  <span>👎 Flag Distrust</span>
-                </button>
+                  <div className="flex items-center gap-2">
+                    <InstagramLogo />
+                    <span>@{instagramUsername.replace('@', '')}</span>
+                  </div>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
               </div>
-            </div>
-
-            {/* Contact details */}
-            <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-5 space-y-4">
-              <h3 className="text-xs font-bold text-accent-green uppercase tracking-wider border-b border-border-subtle/30 pb-2">
-                Merchant Contacts & Verification
-              </h3>
-              
-              <div className="space-y-2">
-                {reseller.state && (
-                  <div className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] text-xs px-3.5 py-2.5 rounded">
-                    <span className="font-bold text-text-secondary">Operating State</span>
-                    <span className="font-mono text-accent-cyan font-bold">{reseller.state}</span>
-                  </div>
-                )}
-
-                {reseller.operating_since_year && (
-                  <div className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] text-xs px-3.5 py-2.5 rounded">
-                    <span className="font-bold text-text-secondary">In Business Since</span>
-                    <span className="font-mono text-accent-green font-bold">{reseller.operating_since_year} ({reseller.years_active} yr(s))</span>
-                  </div>
-                )}
-
-                {reseller.telegram_username && (
-                  <a
-                    href={`https://t.me/${reseller.telegram_username}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] hover:bg-sky-500/5 hover:border-sky-500/20 text-xs px-3.5 py-2.5 rounded transition-all group"
-                  >
-                    <span className="flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-sky-400" />
-                      <span className="font-bold text-text-secondary">Telegram Admin</span>
-                    </span>
-                    <span className="font-mono text-text-muted group-hover:text-sky-400">@{reseller.telegram_username}</span>
-                  </a>
-                )}
-
-                {reseller.telegram_channel_link && (
-                  <a
-                    href={reseller.telegram_channel_link.startsWith('http') ? reseller.telegram_channel_link : `https://${reseller.telegram_channel_link}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-between border border-sky-500/20 bg-sky-500/[0.03] hover:bg-sky-500/10 text-xs px-3.5 py-2.5 rounded transition-all group"
-                  >
-                    <span className="flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-sky-400" />
-                      <span className="font-bold text-sky-300">Telegram Store Channel</span>
-                    </span>
-                    <span className="font-mono text-[10px] text-sky-400">Open Channel ↗</span>
-                  </a>
-                )}
-
-                {reseller.whatsapp_number && (
-                  <div className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] text-xs px-3.5 py-2.5 rounded">
-                    <span className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-emerald-400" />
-                      <span className="font-bold text-text-secondary">WhatsApp</span>
-                    </span>
-                    <span className="font-mono text-text-muted">{reseller.whatsapp_number}</span>
-                  </div>
-                )}
-
-                {reseller.whatsapp_username && (
-                  <div className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] text-xs px-3.5 py-2.5 rounded">
-                    <span className="font-bold text-text-secondary">WhatsApp Name</span>
-                    <span className="font-mono text-text-muted">{reseller.whatsapp_username}</span>
-                  </div>
-                )}
-
-                {reseller.whatsapp_group_link && (
-                  <a
-                    href={reseller.whatsapp_group_link.startsWith('http') ? reseller.whatsapp_group_link : `https://${reseller.whatsapp_group_link}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-between border border-emerald-500/20 bg-emerald-500/[0.03] hover:bg-emerald-500/10 text-xs px-3.5 py-2.5 rounded transition-all group"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-emerald-400" />
-                      <span className="font-bold text-emerald-300">WhatsApp Store Group</span>
-                    </span>
-                    <span className="font-mono text-[10px] text-emerald-400">Join Group ↗</span>
-                  </a>
-                )}
-
-                {reseller.instagram_username && (
-                  <div className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] text-xs px-3.5 py-2.5 rounded">
-                    <span className="flex items-center gap-2">
-                      <Instagram className="w-4 h-4 text-pink-400" />
-                      <span className="font-bold text-text-secondary">Instagram</span>
-                    </span>
-                    <span className="font-mono text-text-muted">@{reseller.instagram_username}</span>
-                  </div>
-                )}
-
-                {reseller.youtube_channel && (
-                  <a
-                    href={reseller.youtube_channel}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-between border border-border-subtle bg-white/[0.01] hover:bg-red-500/5 hover:border-red-500/20 text-xs px-3.5 py-2.5 rounded transition-all group"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Youtube className="w-4 h-4 text-red-500" />
-                      <span className="font-bold text-text-secondary">YouTube</span>
-                    </span>
-                    <span className="font-mono text-text-muted group-hover:text-red-500">Visit Channel</span>
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Submit Review Card */}
-            <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-5 space-y-4">
-              <h3 className="text-xs font-bold text-accent-green uppercase tracking-wider border-b border-border-subtle/30 pb-2">
-                Submit Deal Review
-              </h3>
-              
-              <form onSubmit={handleReviewSubmit} className="space-y-3.5 text-xs">
-                <div>
-                  <label className="text-[9px] text-text-muted uppercase block mb-1">Deal Type</label>
-                  <select
-                    value={dealType}
-                    onChange={(e) => setDealType(e.target.value)}
-                    className="w-full bg-bg-surface border border-border-subtle focus:border-accent-green focus:outline-none rounded px-2 py-1.5 text-text-primary"
-                  >
-                    <option value="account_sale">Account Sale</option>
-                    <option value="uc_topup">UC Top-up</option>
-                    <option value="item_trading">Item skins</option>
-                    <option value="recovery">Account recovery</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[9px] text-text-muted uppercase block mb-1">Deal Rating ({rating} Stars)</label>
-                  <div className="flex gap-2 text-accent-amber">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setRating(i + 1)}
-                        className="transition-transform active:scale-95"
-                      >
-                        <Star className={`w-5 h-5 ${i < rating ? 'fill-accent-amber' : 'text-text-muted'}`} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[9px] text-text-muted uppercase block mb-1">Comment</label>
-                  <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Provide details about transaction speed, middleman compatibility, and seller responsiveness."
-                    className="w-full h-20 bg-bg-surface border border-border-subtle focus:border-accent-green focus:outline-none rounded px-2 py-1.5 text-text-primary font-sans resize-none leading-normal"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-accent-green text-bg-void font-bold font-mono py-2 rounded text-[10px] uppercase tracking-wider hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all"
-                >
-                  Publish Review
-                </button>
-              </form>
-            </div>
-
-            {/* Alert/disclaimers */}
-            <div className="text-[9px] text-text-muted space-y-2 px-1 font-sans leading-relaxed">
-              <p className="flex items-start gap-1">
-                <AlertTriangle className="w-3.5 h-3.5 text-accent-amber shrink-0 mt-0.5" />
-                <span>Double-check Telegram handles carefully! Scammers often create clone usernames with minor character variations (e.g. substituting 'l' for '1' or 'i').</span>
-              </p>
-              <Link
-                href={`/submit-report?name=${encodeURIComponent(reseller.store_name)}&telegram=${encodeURIComponent(reseller.telegram_username || '')}`}
-                className="block text-accent-red font-mono font-bold hover:underline"
-              >
-                ⚠️ Report this merchant profile
-              </Link>
-            </div>
+            )}
           </div>
         </div>
+      </div>
+
+      {/* Escrow Request 3-Way Deal Modal */}
+      <Dialog open={!!selectedEscrowPartner} onOpenChange={(open) => !open && setSelectedEscrowPartner(null)}>
+        <DialogContent className="max-w-md bg-[#090c14] border border-accent-amber/40 text-white font-sans rounded-2xl shadow-[0_0_80px_rgba(245,158,11,0.2)]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-mono uppercase text-accent-amber">
+              <Handshake className="w-5 h-5 text-accent-amber" />
+              <span>3-Way Protected Escrow Deal</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedEscrowPartner && (
+            <div className="space-y-4 text-xs">
+              <p className="text-text-secondary leading-relaxed">
+                You are requesting an Escrow Middleman transaction between <strong className="text-white">{storeName}</strong> (Seller) and yourself (Buyer), supervised by <strong className="text-accent-amber">{selectedEscrowPartner.store_name || selectedEscrowPartner.storeName}</strong>.
+              </p>
+
+              {/* Escrow Protocol Steps */}
+              <div className="p-4 rounded-xl bg-black/40 border border-accent-amber/20 space-y-2.5 font-mono text-[11px]">
+                <div className="flex items-start gap-2">
+                  <span className="w-4 h-4 rounded-full bg-accent-amber/20 text-accent-amber flex items-center justify-center text-[10px] shrink-0">1</span>
+                  <span>Create a 3-way Group on WhatsApp or Telegram with the Seller & Middleman.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-4 h-4 rounded-full bg-accent-amber/20 text-accent-amber flex items-center justify-center text-[10px] shrink-0">2</span>
+                  <span>Buyer deposits deal payment securely into the Escrow Agent's custody.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-4 h-4 rounded-full bg-accent-amber/20 text-accent-amber flex items-center justify-center text-[10px] shrink-0">3</span>
+                  <span>Seller transfers full BGMI account credentials & unbinds social links.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-4 h-4 rounded-full bg-accent-amber/20 text-accent-amber flex items-center justify-center text-[10px] shrink-0">4</span>
+                  <span>Buyer verifies access, Escrow Agent releases payout to Seller. Zero Scam Risk.</span>
+                </div>
+              </div>
+
+              {/* Direct Buttons to Escrow Agent */}
+              <div className="space-y-2 pt-2">
+                {selectedEscrowPartner.whatsapp_number && (
+                  <a
+                    href={`https://wa.me/${selectedEscrowPartner.whatsapp_number.replace(/[^0-9]/g, '')}?text=Hi%2C%20I%20want%20to%20request%20an%20escrow%20trade%20for%20a%20deal%20with%20${encodeURIComponent(storeName)}%20via%208xSentinel`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold font-mono flex items-center justify-center gap-2 transition-all"
+                  >
+                    <WhatsAppLogo />
+                    <span>Contact Middleman on WhatsApp</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                )}
+
+                {selectedEscrowPartner.telegram_username && (
+                  <a
+                    href={`https://t.me/${selectedEscrowPartner.telegram_username.replace('@', '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-2.5 px-4 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold font-mono flex items-center justify-center gap-2 transition-all"
+                  >
+                    <TelegramLogo />
+                    <span>Contact Middleman on Telegram</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

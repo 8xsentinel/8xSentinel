@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { db, getMockDb } from '../../lib/db';
+import { db } from '../../lib/db';
 import { ScamReport } from '../../types';
 import { ShieldAlert, TrendingUp, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
@@ -27,10 +27,9 @@ export default function StatsSection() {
       
       if (!isMounted) return;
 
-      const allApproved = getMockDb().scam_reports.filter((r: ScamReport) => r.status === 'approved');
       let maxReport: ScamReport | null = null;
-      if (allApproved.length > 0) {
-        maxReport = allApproved.reduce((max: ScamReport | null, r: ScamReport) => r.amount_lost > (max?.amount_lost || 0) ? r : max, allApproved[0] as ScamReport | null);
+      if (approved.length > 0) {
+        maxReport = approved.reduce((max: ScamReport | null, r: ScamReport) => (r.amount_lost || 0) > (max?.amount_lost || 0) ? r : max, approved[0] as ScamReport | null);
       }
 
       let mostCommon = 'Fake Account Sale';
@@ -100,7 +99,7 @@ export default function StatsSection() {
               Peak Incident Loss
             </h4>
             <p className="text-xl font-bold tracking-wide text-accent-red mt-1 font-mono">
-              ₹{highlights.highestLossReport ? highlights.highestLossReport.amount_lost.toLocaleString('en-IN') : '25,000'}
+              ₹{highlights.highestLossReport ? highlights.highestLossReport.amount_lost?.toLocaleString('en-IN') : '25,000'}
             </p>
             {highlights.highestLossReport ? (
               <Link 

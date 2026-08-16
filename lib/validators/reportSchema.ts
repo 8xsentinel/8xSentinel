@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 export const evidenceLinkSchema = z.object({
-  type: z.enum(['telegram', 'youtube', 'drive', 'image', 'other']),
+  type: z.string(),
   url: z.string().url({ message: 'Must be a valid URL (e.g. https://...)' }),
-  label: z.string().min(2, { message: 'Label must be at least 2 characters' })
+  label: z.string().min(1, { message: 'Evidence label is required' })
 });
 
 export const reportSchema = z.object({
@@ -19,16 +19,19 @@ export const reportSchema = z.object({
   victim_phone_number: z.string().optional().or(z.literal('')),
   incident_date: z.string().refine(val => !isNaN(Date.parse(val)), { message: 'Must be a valid date' }),
   scam_type: z.enum([
+    'bank_account_freeze',
+    'account_pullback',
     'fake_account_sale', 
     'payment_fraud', 
     'fake_buyer', 
     'impersonation', 
     'item_scam', 
     'advance_payment', 
+    'qr_phishing',
     'other'
   ]),
   evidence_links: z.array(evidenceLinkSchema).max(10, { message: 'Maximum of 10 evidence links allowed' })
-}).refine(data => {
+}).passthrough().refine(data => {
   // Ensure at least one identifier is provided
   return !!(
     data.telegram_username ||
@@ -38,8 +41,8 @@ export const reportSchema = z.object({
     data.bgmi_uid
   );
 }, {
-  message: 'You must provide at least one identifier (Telegram, WhatsApp, UPI, Instagram, or BGMI UID) to help flag this scammer.',
-  path: ['telegram_username'] // associate with the first identifier field
+  message: 'You must provide at least one identifier (WhatsApp Number, Telegram, UPI ID, or Instagram) to file this scam report.',
+  path: ['whatsapp_number']
 });
 
 export type ReportSubmission = z.infer<typeof reportSchema>;

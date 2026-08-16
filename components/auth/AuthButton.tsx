@@ -3,10 +3,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../lib/firebase/AuthContext';
-import { X, User, LogOut, Shield, ChevronDown, Crown, Lock } from 'lucide-react';
+import { getFirebaseAuth } from '../../lib/firebase/config';
+import { X, User, LogOut, Shield, ChevronDown, Crown, Lock, Loader2, Sparkles } from 'lucide-react';
 
 export default function AuthButton() {
-  const { user, profile, isSuperAdmin, loading, signInWithGoogle, signOut } = useAuth();
+  const { user, profile, isSuperAdmin, loading, isAuthenticating, signInWithGoogle, signOut } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -35,13 +36,49 @@ export default function AuthButton() {
   }, [showModal]);
 
   const handleGoogle = async () => {
+    if (isAuthenticating) return;
     setError('');
     try {
       await signInWithGoogle();
       setShowModal(false);
+
+      if (typeof window !== 'undefined') {
+        const auth = getFirebaseAuth();
+        const currentEmail = auth?.currentUser?.email?.toLowerCase().trim();
+        const isSuperAdminEmail = currentEmail === '8xsentinel@gmail.com';
+        if (isSuperAdminEmail) {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/dashboard';
+        }
+      }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Google sign-in failed';
-      setError(message.replace('Firebase: ', '').replace(/\(auth\/.*\)/, '').trim());
+      const authError = err as { code?: string; message?: string };
+      console.error('Sign-in error details:', authError);
+
+      if (
+        authError?.code === 'auth/popup-closed-by-user' ||
+        authError?.code === 'auth/cancelled-popup-request'
+      ) {
+        return;
+      }
+
+      if (authError?.code === 'auth/popup-blocked') {
+        setError('The sign-in window was blocked by your browser. Please allow popups for localhost and try again.');
+        return;
+      }
+
+      if (authError?.code === 'auth/unauthorized-domain') {
+        setError('This domain (localhost) is not authorized in the Firebase Console.');
+        return;
+      }
+
+      if (authError?.code === 'auth/network-request-failed') {
+        setError('Unable to connect to Google Auth servers. Please check your internet connection.');
+        return;
+      }
+
+      setError(authError?.message || 'Authentication could not be completed. Please try again.');
     }
   };
 
@@ -61,6 +98,32 @@ export default function AuthButton() {
       .toUpperCase();
 
     const isRegionalAdmin = profile?.role === 'regional_admin';
+    const storeStatus = profile?.store_status || (profile as any)?.storeStatus;
+    const userRole = profile?.role;
+
+    const isApprovedReseller = userRole === 'verified_reseller' || storeStatus === 'approved';
+    const isPending = storeStatus === 'pending';
+    const isNotRegistered = storeStatus === 'not_registered' || !storeStatus;
+    
+    let statusText = 'Sentinel Verified';
+    let statusColor = 'text-accent-green';
+    
+    if (isSuperAdmin) {
+      statusText = 'Super Admin';
+      statusColor = 'text-accent-red';
+    } else if (isRegionalAdmin) {
+      statusText = 'Reg. Admin';
+      statusColor = 'text-accent-cyan';
+    } else if (isApprovedReseller) {
+      statusText = 'Sentinel Verified';
+      statusColor = 'text-accent-cyan';
+    } else if (isPending) {
+      statusText = 'Pending Verification';
+      statusColor = 'text-accent-amber';
+    } else if (isNotRegistered) {
+      statusText = 'Pending Setup';
+      statusColor = 'text-accent-amber';
+    }
 
     return (
       <div className="relative" ref={menuRef}>
@@ -91,10 +154,8 @@ export default function AuthButton() {
             <p className="text-[13px] font-semibold text-white leading-tight truncate max-w-[120px]" style={{ fontFamily: 'var(--font-h)' }}>
               {user.displayName || user.email?.split('@')[0] || 'Operator'}
             </p>
-            <p className={`text-[9px] font-bold uppercase tracking-widest ${
-              isSuperAdmin ? 'text-accent-red' : 'text-accent-cyan'
-            }`}>
-              {isSuperAdmin ? 'Super Admin' : isRegionalAdmin ? 'Reg. Admin' : 'Active'}
+            <p className={`text-[9px] font-bold uppercase tracking-widest ${statusColor}`}>
+              {statusText}
             </p>
           </div>
           <ChevronDown className="w-3.5 h-3.5 text-text-secondary hidden sm:block" />
@@ -119,16 +180,30 @@ export default function AuthButton() {
             
             <div className="py-1">
               {!(isSuperAdmin || isRegionalAdmin) && (
-                <button 
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    window.location.href = '/dashboard';
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 flex items-center gap-2.5 transition-colors"
-                >
-                  <User className="w-4 h-4 text-text-secondary" />
-                  <span className="text-[13px] text-text-secondary hover:text-white font-medium">Dashboard</span>
-                </button>
+                <>
+                  {isNotRegistered && (
+                    <button 
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        window.location.href = '/dashboard';
+                      }}
+                      className="w-full text-left px-4 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 flex items-center gap-2.5 transition-colors group"
+                    >
+                      <Sparkles className="w-4 h-4 text-accent-cyan animate-pulse" />
+                      <span className="text-[13px] text-accent-cyan font-bold">Complete Onboarding</span>
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      window.location.href = '/dashboard';
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-white/5 flex items-center gap-2.5 transition-colors"
+                  >
+                    <User className="w-4 h-4 text-text-secondary" />
+                    <span className="text-[13px] text-text-secondary hover:text-white font-medium">Dashboard</span>
+                  </button>
+                </>
               )}
               
               {(isSuperAdmin || isRegionalAdmin) && (
@@ -189,7 +264,7 @@ export default function AuthButton() {
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/90 backdrop-blur-md transition-opacity"
-            onClick={() => setShowModal(false)}
+            onClick={() => !isAuthenticating && setShowModal(false)}
           />
 
           {/* Modal Content */}
@@ -199,12 +274,14 @@ export default function AuthButton() {
             
             {/* Header */}
             <div className="p-8 pb-6 text-center relative z-10">
-              <button
-                onClick={() => setShowModal(false)}
-                className="absolute right-5 top-5 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-text-muted hover:text-white hover:bg-white/10 transition-all border border-white/5"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {!isAuthenticating && (
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="absolute right-5 top-5 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-text-muted hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
               <div className="relative w-20 h-20 mx-auto mb-6 mt-2">
                 <div className="absolute inset-0 bg-accent-cyan/20 blur-[24px] rounded-full animate-pulse"></div>
                 <div className="relative w-full h-full rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl shadow-inner shadow-white/5">
@@ -227,20 +304,30 @@ export default function AuthButton() {
               )}
 
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-accent-cyan via-accent-blue to-accent-cyan rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
+                <div className={`absolute -inset-1 bg-gradient-to-r from-accent-cyan via-accent-blue to-accent-cyan rounded-xl blur ${isAuthenticating ? 'opacity-75 animate-pulse' : 'opacity-25 group-hover:opacity-50'} transition duration-500`}></div>
                 <button
                   type="button"
+                  disabled={isAuthenticating}
                   onClick={handleGoogle}
-                  className="relative w-full flex items-center justify-center gap-3 bg-[#0a0c12] hover:bg-[#121622] text-white border border-white/10 py-4 rounded-xl font-bold text-[13px] tracking-wide transition-all duration-300"
+                  className={`relative w-full flex items-center justify-center gap-3 bg-[#0a0c12] ${isAuthenticating ? 'cursor-not-allowed opacity-80' : 'hover:bg-[#121622]'} text-white border border-white/10 py-4 rounded-xl font-bold text-[13px] tracking-wide transition-all duration-300`}
                   style={{ fontFamily: 'var(--font-h)' }}
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                  </svg>
-                  <span className="tracking-widest">CONTINUE WITH GOOGLE</span>
+                  {isAuthenticating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin text-accent-cyan" />
+                      <span className="tracking-widest text-accent-cyan">AUTHENTICATING...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                      </svg>
+                      <span className="tracking-widest">CONTINUE WITH GOOGLE</span>
+                    </>
+                  )}
                 </button>
               </div>
 

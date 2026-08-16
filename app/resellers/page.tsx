@@ -32,7 +32,8 @@ export default function ResellersDirectory() {
       reseller.region?.toLowerCase().includes(query) ||
       reseller.telegram_username?.toLowerCase().includes(query) ||
       reseller.whatsapp_number?.replace(/\D/g, '').includes(query.replace(/\D/g, '')) ||
-      reseller.profile?.username.toLowerCase().includes(query);
+      (reseller.profile?.username || '').toLowerCase().includes(query) ||
+      (reseller.profile?.display_name || '').toLowerCase().includes(query);
 
     const matchesRegion =
       selectedRegion === 'All Regions' ||
@@ -55,7 +56,7 @@ export default function ResellersDirectory() {
       {/* Header Section */}
       <div className="space-y-3">
         <div className="badge badge-green">
-          MERCHANT REPUTATION DIRECTORY
+          BGMI RESELLERS DIRECTORY
         </div>
         <div className="flex items-center gap-3">
           <h1 
@@ -66,7 +67,7 @@ export default function ResellersDirectory() {
           </h1>
         </div>
         <p className="text-text-secondary text-sm max-w-2xl leading-relaxed">
-          Community-vetted merchants covering all 28 States & 8 Union Territories of India. Verified by peer trust votes and certified regional administrators.
+          Built by Resellers for all Resellers across India. Discover verified BGMI stores operating on WhatsApp & Telegram across all 28 States & 8 Union Territories.
         </p>
       </div>
 
@@ -80,7 +81,7 @@ export default function ResellersDirectory() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search store name, state (e.g. Maharashtra, Delhi), telegram..."
+              placeholder="Search store name, state (e.g. Maharashtra, Delhi), telegram, WhatsApp..."
               className="input-field pl-11 py-3 text-xs w-full"
             />
           </div>
@@ -94,33 +95,43 @@ export default function ResellersDirectory() {
                 setSelectedRegion(e.target.value);
                 setSelectedState('all');
               }}
-              className="input-field pl-11 py-3 text-xs appearance-none cursor-pointer w-full bg-[#080a0f]"
+              className="input-field pl-11 pr-8 py-3 text-xs w-full appearance-none cursor-pointer"
             >
-              {INDIA_REGIONS.map((reg) => (
-                <option key={reg} value={reg} className="bg-[#080a0f] text-white">
-                  {reg}
+              <option value="All Regions">All Regions</option>
+              {INDIA_REGIONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
                 </option>
               ))}
             </select>
+            <Filter className="absolute right-4 w-3.5 h-3.5 text-text-muted pointer-events-none" />
           </div>
 
-          {/* State Dropdown (All 36 States & UTs) */}
+          {/* State Dropdown */}
           <div className="md:col-span-3 relative flex items-center">
             <Building className="absolute left-4 w-4 h-4 text-accent-green pointer-events-none" />
             <select
               value={selectedState}
               onChange={(e) => setSelectedState(e.target.value)}
-              className="input-field pl-11 py-3 text-xs appearance-none cursor-pointer w-full bg-[#080a0f]"
+              className="input-field pl-11 pr-8 py-3 text-xs w-full appearance-none cursor-pointer"
             >
-              <option value="all" className="bg-[#080a0f] text-white">
-                All Indian States ({statesForSelectedRegion.length})
-              </option>
-              {statesForSelectedRegion.map((st) => (
-                <option key={st.code} value={st.name} className="bg-[#080a0f] text-white">
-                  {st.name}
-                </option>
-              ))}
+              <option value="all">All States / UTs</option>
+              <optgroup label="States (28)">
+                {statesForSelectedRegion.filter(s => s.type === 'state').map((st) => (
+                  <option key={st.code} value={st.name}>
+                    {st.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Union Territories (8)">
+                {statesForSelectedRegion.filter(s => s.type === 'ut').map((st) => (
+                  <option key={st.code} value={st.name}>
+                    {st.name}
+                  </option>
+                ))}
+              </optgroup>
             </select>
+            <Filter className="absolute right-4 w-3.5 h-3.5 text-text-muted pointer-events-none" />
           </div>
         </div>
 
@@ -154,7 +165,7 @@ export default function ResellersDirectory() {
         <div className="py-24 text-center text-text-muted space-y-3">
           <span className="w-8 h-8 border-3 border-accent-green border-t-transparent rounded-full animate-spin inline-block" />
           <p className="text-xs uppercase tracking-widest font-bold text-accent-green" style={{ fontFamily: 'var(--font-h)' }}>
-            Loading Verified Merchant Catalog...
+            Loading Verified Resellers Catalog...
           </p>
         </div>
       ) : filteredResellers.length === 0 ? (
@@ -164,7 +175,7 @@ export default function ResellersDirectory() {
             No Resellers Found
           </h3>
           <p className="text-xs text-text-secondary max-w-sm mx-auto leading-relaxed">
-            No merchant profiles match your current search query or region filter.
+            No BGMI reseller profiles match your current search query or region filter.
           </p>
         </div>
       ) : (

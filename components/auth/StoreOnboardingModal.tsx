@@ -62,31 +62,36 @@ const InstagramIcon = (props: React.ComponentProps<'svg'>) => (
 
 interface StoreOnboardingModalProps {
   onComplete: () => void;
+  initialData?: any;
 }
 
-export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModalProps) {
+export default function StoreOnboardingModal({ onComplete, initialData }: StoreOnboardingModalProps) {
   const { user, profile, signOut } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
+  const rawWaNumber = initialData?.whatsappNumber || initialData?.whatsapp_number || '';
+  const parsedCode = rawWaNumber.startsWith('+') ? rawWaNumber.split(' ')[0] : (initialData?.countryCode || initialData?.country_code || '+91');
+  const parsedNumber = rawWaNumber.startsWith('+') ? rawWaNumber.split(' ').slice(1).join(' ') : rawWaNumber;
+
   // Form states
-  const [storeName, setStoreName] = useState('');
-  const [selectedState, setSelectedState] = useState('Delhi (NCT)');
-  const [primaryPlatform, setPrimaryPlatform] = useState<PrimaryPlatform>('whatsapp_primary');
-  const [countryCode, setCountryCode] = useState('+91');
+  const [storeName, setStoreName] = useState(initialData?.storeName || initialData?.store_name || '');
+  const [selectedState, setSelectedState] = useState(initialData?.state || initialData?.region || profile?.state || profile?.region || 'Delhi (NCT)');
+  const [primaryPlatform, setPrimaryPlatform] = useState<PrimaryPlatform>(initialData?.primaryPlatform || initialData?.primary_platform || 'whatsapp_primary');
+  const [countryCode, setCountryCode] = useState(parsedCode || '+91');
   
   // WhatsApp specific states
-  const [whatsappNumber, setWhatsappNumber] = useState('');
-  const [whatsappUsername, setWhatsappUsername] = useState('');
-  const [whatsappGroupLink, setWhatsappGroupLink] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState(parsedNumber || '');
+  const [whatsappUsername, setWhatsappUsername] = useState((initialData?.whatsappUsername || initialData?.whatsapp_username || '').replace('@', ''));
+  const [whatsappGroupLink, setWhatsappGroupLink] = useState(initialData?.whatsappGroupLink || initialData?.whatsapp_group_link || '');
 
   // Telegram specific states
-  const [telegramHandle, setTelegramHandle] = useState('');
-  const [telegramChannelLink, setTelegramChannelLink] = useState('');
+  const [telegramHandle, setTelegramHandle] = useState((initialData?.telegramUsername || initialData?.telegram_username || '').replace('@', ''));
+  const [telegramChannelLink, setTelegramChannelLink] = useState(initialData?.telegramChannelLink || initialData?.telegram_channel_link || '');
 
   // General states
-  const [operatingSince, setOperatingSince] = useState<number>(2022);
-  const [instagram, setInstagram] = useState('');
-  const [specialties, setSpecialties] = useState<string[]>(['budget_accounts', 'premium_accounts', 'uc_recharge']);
+  const [operatingSince, setOperatingSince] = useState<number>(initialData?.operatingSinceYear || initialData?.operating_since_year || 2022);
+  const [instagram, setInstagram] = useState((initialData?.instagramUsername || initialData?.instagram_username || '').replace('@', ''));
+  const [specialties, setSpecialties] = useState<string[]>(initialData?.specializesIn || initialData?.specializes_in || ['budget_accounts', 'premium_accounts', 'uc_recharge']);
 
   const specialtyOptions = [
     { id: 'budget_accounts', label: 'Budget Accounts', icon: Tag, color: 'text-sky-400' },
@@ -105,8 +110,8 @@ export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModa
   };
 
   // Dynamic field visibility
-  const isWhatsappActive = primaryPlatform === 'whatsapp_only' || primaryPlatform === 'whatsapp_primary' || primaryPlatform === 'both';
-  const isTelegramActive = primaryPlatform === 'telegram_only' || primaryPlatform === 'telegram_primary' || primaryPlatform === 'both';
+  const isWhatsappActive = primaryPlatform !== 'telegram_only';
+  const isTelegramActive = primaryPlatform !== 'whatsapp_only';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,13 +155,15 @@ export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModa
 
     setSubmitting(true);
     try {
+      const targetProfileId = profile?.id || (user?.email ? (await db.syncFirebaseUser(user.email, user.displayName || '', user.photoURL || ''))?.id : '');
       const res = await db.applyForReseller({
+        profile_id: targetProfileId,
         store_name: storeName.trim(),
         state: selectedState,
         country_code: countryCode,
         primary_platform: primaryPlatform,
         whatsapp_number: formattedWhatsapp,
-        whatsapp_username: whatsappUsername.trim() || undefined,
+        whatsapp_username: whatsappUsername.trim().replace('@', '') || undefined,
         whatsapp_group_link: whatsappGroupLink.trim() || undefined,
         telegram_username: telegramHandle.trim().replace('@', '') || undefined,
         telegram_channel_link: telegramChannelLink.trim() || undefined,
@@ -210,11 +217,11 @@ export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModa
             </div>
 
             <button
-              onClick={() => signOut()}
+              onClick={() => initialData ? onComplete() : signOut()}
               className="flex items-center gap-1.5 text-xs text-text-muted hover:text-accent-red font-mono px-3 py-1.5 rounded-lg border border-white/5 hover:border-accent-red/30 transition-all cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
+              <span>{initialData ? 'Cancel Edit' : 'Sign Out'}</span>
             </button>
           </div>
 
@@ -222,8 +229,8 @@ export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModa
           <div className="mt-4 p-3.5 rounded-xl bg-white/[0.02] border border-white/10 flex items-start gap-3 text-xs text-text-secondary">
             <ShieldCheck className="w-4 h-4 text-accent-cyan shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="leading-relaxed">
-                Approval by your Regional Admin grants you the <span className="text-accent-cyan font-bold font-mono">Sentinel Verified (🔷)</span> credential. You may subsequently request the elite <span className="text-accent-amber font-bold font-mono">Sentinel Trusted (🟨)</span> distinction via your dashboard.
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Approval by your Regional Admin grants you the <span className="text-accent-cyan font-bold font-mono inline-flex items-center gap-1 align-text-bottom">Sentinel Verified <ShieldCheck className="w-3.5 h-3.5" /></span> credential. You may subsequently request the elite <span className="text-accent-amber font-bold font-mono inline-flex items-center gap-1 align-text-bottom">Sentinel Trusted <ShieldCheck className="w-3.5 h-3.5 fill-accent-amber/20" /></span> distinction via your dashboard.
               </p>
             </div>
           </div>
@@ -328,7 +335,7 @@ export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModa
           {/* Section 3: Operating Network Channel Mode */}
           <div className="space-y-2.5">
             <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between font-mono">
-              <span>Primary Operating Network *</span>
+              <span>Operating Network *</span>
               <span className="text-[10px] text-text-muted">Direct Deal Protocol</span>
             </label>
             
@@ -381,31 +388,72 @@ export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModa
                 </p>
               </button>
 
-              {/* Dual Network */}
-              <button
-                type="button"
-                onClick={() => setPrimaryPlatform('both')}
+              {/* WhatsApp and Telegram */}
+              <div
+                onClick={() => {
+                  if (primaryPlatform !== 'both' && primaryPlatform !== 'whatsapp_primary' && primaryPlatform !== 'telegram_primary') {
+                    setPrimaryPlatform('both');
+                  }
+                }}
                 className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                   primaryPlatform === 'both' || primaryPlatform === 'whatsapp_primary' || primaryPlatform === 'telegram_primary'
                     ? 'bg-accent-amber/10 border-accent-amber/50 text-white shadow-[0_0_20px_rgba(245,158,11,0.15)]'
                     : 'bg-white/[0.02] border-white/10 text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pointer-events-none">
                   <div className="flex items-center gap-1.5">
                     <span className="text-emerald-400"><WhatsAppLogo /></span>
                     <span className="text-sky-400"><TelegramLogo /></span>
-                    <span className="text-xs font-bold font-mono tracking-wide text-white">Dual Network</span>
+                    <span className="text-[10px] sm:text-xs font-bold font-mono tracking-wide text-white truncate">WhatsApp & Telegram</span>
                   </div>
                   {(primaryPlatform === 'both' || primaryPlatform === 'whatsapp_primary' || primaryPlatform === 'telegram_primary') && (
                     <CheckCircle2 className="w-3.5 h-3.5 text-accent-amber" />
                   )}
                 </div>
-                <p className="text-[11px] text-text-muted mt-2 leading-tight">
-                  Synchronized support across both networks
+                <p className="text-[11px] text-text-muted mt-2 leading-tight pointer-events-none">
+                  Operating on both networks.
                 </p>
-              </button>
+              </div>
             </div>
+
+            {(primaryPlatform === 'both' || primaryPlatform === 'whatsapp_primary' || primaryPlatform === 'telegram_primary') && (
+              <div className="p-3.5 rounded-xl border border-accent-amber/30 bg-accent-amber/[0.03] space-y-2 mt-2 animate-in fade-in zoom-in-95 duration-200">
+                <p className="text-[10px] uppercase font-bold text-accent-amber mb-2 tracking-wider flex items-center justify-between">
+                  <span>Select Primary Network (Most Active)</span>
+                  <span className="text-[9px] text-accent-amber/60">Required</span>
+                </p>
+                <div className="flex gap-2">
+                  <button 
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPrimaryPlatform('whatsapp_primary'); }}
+                    className={`flex-1 p-2 border rounded-lg text-[10px] uppercase font-mono font-bold text-center transition-all ${
+                      primaryPlatform === 'whatsapp_primary' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-black/40 border-white/10 text-text-muted hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    WhatsApp
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPrimaryPlatform('telegram_primary'); }}
+                    className={`flex-1 p-2 border rounded-lg text-[10px] uppercase font-mono font-bold text-center transition-all ${
+                      primaryPlatform === 'telegram_primary' ? 'bg-sky-500/20 border-sky-500/40 text-sky-400' : 'bg-black/40 border-white/10 text-text-muted hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    Telegram
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPrimaryPlatform('both'); }}
+                    className={`flex-1 p-2 border rounded-lg text-[10px] uppercase font-mono font-bold text-center transition-all ${
+                      primaryPlatform === 'both' ? 'bg-accent-amber/20 border-accent-amber/40 text-accent-amber' : 'bg-black/40 border-white/10 text-text-muted hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    Equal
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Section 4: Dynamic Contact Credentials */}
@@ -458,16 +506,19 @@ export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModa
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-1.5 font-mono">
                     <User className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>WhatsApp Display Handle *</span>
+                    <span>WhatsApp Username *</span>
                   </label>
-                  <input
-                    type="text"
-                    required={primaryPlatform === 'whatsapp_only'}
-                    value={whatsappUsername}
-                    onChange={(e) => setWhatsappUsername(e.target.value)}
-                    placeholder="e.g. ApexDeals Official"
-                    className="w-full bg-white/[0.03] border border-white/10 focus:border-emerald-500/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-2.5 text-gray-500 text-sm font-mono">@</span>
+                    <input
+                      type="text"
+                      required={primaryPlatform === 'whatsapp_only'}
+                      value={whatsappUsername}
+                      onChange={(e) => setWhatsappUsername(e.target.value.replace('@', ''))}
+                      placeholder="maddy_bgmistore"
+                      className="w-full bg-white/[0.03] border border-white/10 focus:border-emerald-500/60 rounded-xl pl-8 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -476,15 +527,16 @@ export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModa
                 <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between font-mono">
                   <span className="flex items-center gap-1.5">
                     <Link2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>WhatsApp Group / Channel Link</span>
+                    <span>Official Store on WhatsApp Group or Channel Link *</span>
                   </span>
-                  <span className="text-[10px] text-text-muted">Public Catalog URL</span>
+                  <span className="text-[10px] text-text-muted">Public Group / Channel URL</span>
                 </label>
                 <input
                   type="text"
+                  required
                   value={whatsappGroupLink}
                   onChange={(e) => setWhatsappGroupLink(e.target.value)}
-                  placeholder="https://chat.whatsapp.com/..."
+                  placeholder="https://chat.whatsapp.com/... or https://whatsapp.com/channel/..."
                   className="w-full bg-white/[0.03] border border-white/10 focus:border-emerald-500/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-mono text-xs"
                 />
               </div>
@@ -563,13 +615,13 @@ export default function StoreOnboardingModal({ onComplete }: StoreOnboardingModa
                 <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between font-mono">
                   <span className="flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Official Telegram Store Link {primaryPlatform === 'telegram_only' ? '*' : '(Optional)'}</span>
+                    <span>Official Telegram Store Link *</span>
                   </span>
                   <span className="text-[10px] text-text-muted">Public Channel / Group</span>
                 </label>
                 <input
                   type="text"
-                  required={primaryPlatform === 'telegram_only'}
+                  required
                   value={telegramChannelLink}
                   onChange={(e) => setTelegramChannelLink(e.target.value)}
                   placeholder="https://t.me/store_official"

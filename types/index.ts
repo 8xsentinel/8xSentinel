@@ -1,12 +1,15 @@
 export type UserRole = 'user' | 'verified_reseller' | 'regional_admin' | 'admin' | 'super_admin' | 'moderator' | 'seller';
 export type ScamReportStatus = 'pending' | 'approved' | 'rejected' | 'flagged';
 export type ScamType =
+  | 'bank_account_freeze'
+  | 'account_pullback'
   | 'fake_account_sale'
   | 'payment_fraud'
   | 'fake_buyer'
   | 'impersonation'
   | 'item_scam'
   | 'advance_payment'
+  | 'qr_phishing'
   | 'other';
 
 export type EvidenceType = 'telegram' | 'youtube' | 'drive' | 'image' | 'screenshot' | 'other';

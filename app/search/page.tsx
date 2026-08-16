@@ -25,12 +25,12 @@ function SearchContent() {
   });
   const [loading, setLoading] = useState(false);
 
-  const { user } = useAuth();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { user, profile } = useAuth();
+  const currentUser = profile;
 
   useEffect(() => {
-    setCurrentUser(db.getCurrentUser());
-  }, []);
+    // Current user is already synced via context
+  }, [currentUser]);
 
   const isUserAuthenticated = !!user || !!currentUser;
 

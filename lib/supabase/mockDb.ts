@@ -566,10 +566,6 @@ export const db = {
     return newProfile;
   },
 
-  syncClerkUser: (email: string, username: string, name: string): Profile => {
-    return db.syncFirebaseUser(email, name);
-  },
-
   registerUser: (username: string, display_name: string): Profile => {
     const db = getMockDb();
     const newUser: Profile = {

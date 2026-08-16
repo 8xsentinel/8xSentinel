@@ -37,9 +37,9 @@ export const metadata: Metadata = {
     "BGMI telegram verification",
   ],
   openGraph: {
-    title: "8xSentinel — BGMI Central Scammer Registry & Trader Verification",
+    title: "8xSentinel — BGMI Central Scammer Registry & Reseller Verification",
     description:
-      "Definitive trust infrastructure for BGMI traders. Check blacklists and find verified merchants before dealing.",
+      "Definitive trust infrastructure built by Resellers for all Resellers in the BGMI community. Check blacklists and find verified BGMI stores before dealing.",
     url: "https://8xsentinel.com",
     siteName: "8xSentinel",
     images: [
@@ -55,9 +55,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "8xSentinel — BGMI Trading Security Platform",
+    title: "8xSentinel — BGMI Reseller Community Security Platform",
     description:
-      "Definitive trust infrastructure for BGMI traders. Check blacklists and find verified merchants before dealing.",
+      "Definitive trust infrastructure built by Resellers for all Resellers in the BGMI community. Check blacklists and find verified BGMI stores before dealing.",
     images: ["/og-image.jpg"],
   },
   icons: {

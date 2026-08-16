@@ -3,101 +3,107 @@
 import React from 'react';
 import Link from 'next/link';
 import { TrustedReseller } from '../../types';
-import { ShieldCheck, Star, MessageCircle, Phone, MapPin, UserCheck } from 'lucide-react';
+import { ShieldCheck, Star, MessageCircle, Phone, MapPin, UserCheck, Crown, ArrowUpRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface SellerCardProps {
   reseller: TrustedReseller;
 }
 
-const badgeLabel: Record<string, string> = {
-  sentinel_verified: '🔷 Sentinel Verified',
-  sentinel_trusted:  '🟨 Sentinel Trusted',
-};
-
 export default function SellerCard({ reseller }: SellerCardProps) {
-  const profileUsername = reseller.profile?.username || reseller.id;
-  const topBadge = reseller.badges?.find((b: any) =>
-    typeof b === 'string'
-      ? ['sentinel_trusted', 'sentinel_verified'].includes(b)
-      : ['sentinel_trusted', 'sentinel_verified'].includes(b.type)
-  );
+  const profileUsername = reseller.profile?.username || reseller.profile?.displayName || reseller.id;
+  const isTier2 = reseller.tier2_status === 'approved' || reseller.tier === 2;
+  const avatar = reseller.profile?.avatar_url || reseller.profile?.avatarUrl;
+  const state = reseller.state || reseller.region || 'India';
+  const trustScore = reseller.trust_score ?? 30;
 
   return (
-    <Link href={`/resellers/${profileUsername}`}>
-      <div className="group glass-panel card-glow-green rounded-2xl p-5 transition-all duration-300 cursor-pointer h-full flex flex-col gap-4 relative overflow-hidden hover:-translate-y-1 hover:border-accent-green/30">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-[15px] font-bold text-white uppercase tracking-wide truncate" style={{ fontFamily: 'var(--font-h)' }}>
-                {reseller.store_name}
-              </h3>
-              {(reseller.state || reseller.region) && (
-                <span className="text-[10px] font-mono text-accent-cyan border border-accent-cyan/30 bg-accent-cyan/10 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                  <MapPin className="w-2.5 h-2.5" />
-                  {reseller.state || reseller.region}
-                </span>
+    <Link href={`/resellers/${encodeURIComponent(profileUsername)}`} className="block group h-full">
+      <div className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.03] to-white/[0.01] hover:border-accent-cyan/40 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(0,184,255,0.15)] flex flex-col justify-between gap-4 h-full overflow-hidden">
+        
+        {/* Glow Accent Top Border */}
+        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isTier2 ? 'from-amber-500 to-yellow-400' : 'from-accent-cyan to-accent-blue'}`} />
+
+        <div className="space-y-3">
+          {/* Header Row */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              {avatar ? (
+                <img
+                  src={avatar}
+                  alt={reseller.store_name}
+                  className={`w-10 h-10 rounded-xl border object-cover shrink-0 ${isTier2 ? 'border-accent-amber' : 'border-accent-cyan/50'}`}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center font-bold text-accent-cyan font-mono text-sm shrink-0">
+                  {reseller.store_name.slice(0, 2).toUpperCase()}
+                </div>
               )}
+
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wide truncate group-hover:text-accent-cyan transition-colors" style={{ fontFamily: 'var(--font-h)' }}>
+                  {reseller.store_name}
+                </h3>
+                <span className="text-[10px] font-mono text-accent-amber flex items-center gap-1">
+                  <MapPin className="w-2.5 h-2.5 shrink-0" />
+                  <span className="truncate">{state}</span>
+                </span>
+              </div>
             </div>
-            {reseller.tagline && (
-              <p className="text-[12px] text-text-secondary font-sans truncate">{reseller.tagline}</p>
+
+            <Badge className={`text-[9px] uppercase font-mono tracking-wider shrink-0 ${
+              isTier2 
+                ? 'bg-accent-amber/20 text-accent-amber border-accent-amber/40' 
+                : 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/30'
+            }`}>
+              {isTier2 ? <Crown className="w-2.5 h-2.5 mr-1" /> : <ShieldCheck className="w-2.5 h-2.5 mr-1" />}
+              <span>{isTier2 ? 'Trusted' : 'Verified'}</span>
+            </Badge>
+          </div>
+
+          {/* Platform tags */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
+            {reseller.primary_platform && (
+              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md border ${
+                reseller.primary_platform === 'whatsapp_only'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                  : reseller.primary_platform === 'telegram_only'
+                  ? 'bg-sky-500/10 border-sky-500/30 text-sky-400'
+                  : reseller.primary_platform === 'whatsapp_primary'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                  : reseller.primary_platform === 'telegram_primary'
+                  ? 'bg-sky-500/10 border-sky-500/30 text-sky-400'
+                  : 'bg-accent-cyan/10 border-accent-cyan/30 text-accent-cyan'
+              }`}>
+                {reseller.primary_platform === 'whatsapp_only' && '💬 WA Only'}
+                {reseller.primary_platform === 'telegram_only' && '✈️ TG Only'}
+                {reseller.primary_platform === 'whatsapp_primary' && '💬 WA Primary'}
+                {reseller.primary_platform === 'telegram_primary' && '✈️ TG Primary'}
+                {reseller.primary_platform === 'both' && '⚡ Dual Net'}
+              </span>
+            )}
+
+            {reseller.whatsapp_number && (
+              <span className="text-[10px] text-text-muted font-mono flex items-center gap-1">
+                <Phone className="w-2.5 h-2.5 text-emerald-400" />
+                <span>{reseller.whatsapp_number}</span>
+              </span>
             )}
           </div>
-          {topBadge && (
-            <span className="badge badge-green text-[10px] whitespace-nowrap">
-              {badgeLabel[typeof topBadge === 'string' ? topBadge : topBadge.type] || 'Verified'}
-            </span>
-          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-[11px] font-sans">
-          {reseller.primary_platform && (
-            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-              reseller.primary_platform === 'whatsapp_only'
-                ? 'bg-accent-green/10 border-accent-green/30 text-accent-green'
-                : reseller.primary_platform === 'telegram_only'
-                ? 'bg-accent-cyan/10 border-accent-cyan/30 text-accent-cyan'
-                : reseller.primary_platform === 'whatsapp_primary'
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : reseller.primary_platform === 'telegram_primary'
-                ? 'bg-sky-500/10 border-sky-500/30 text-sky-400'
-                : 'bg-accent-amber/10 border-accent-amber/30 text-accent-amber'
-            }`}>
-              {reseller.primary_platform === 'whatsapp_only' && '💬 WhatsApp Only'}
-              {reseller.primary_platform === 'telegram_only' && '✈️ Telegram Only'}
-              {reseller.primary_platform === 'whatsapp_primary' && '💬 WhatsApp Primary'}
-              {reseller.primary_platform === 'telegram_primary' && '✈️ Telegram Primary'}
-              {reseller.primary_platform === 'both' && '⚡ Dual Network'}
-            </span>
-          )}
-
-          {reseller.whatsapp_number && (
-            <span className="flex items-center gap-1 text-text-secondary">
-              <Phone className="w-3.5 h-3.5 text-accent-green" /> {reseller.whatsapp_number}
-            </span>
-          )}
-
-          {reseller.telegram_username && (
-            <span className="flex items-center gap-1 text-text-secondary">
-              <MessageCircle className="w-3.5 h-3.5 text-accent-tg" /> @{reseller.telegram_username}
-            </span>
-          )}
-        </div>
-
-        {reseller.verified_by_regional_admin_name && (
-          <div className="text-[10px] text-accent-green font-mono flex items-center gap-1 border-t border-white/5 pt-2">
-            <UserCheck className="w-3 h-3" /> Regional Vouch: {reseller.verified_by_regional_admin_name}
-          </div>
-        )}
-
-        <div className="mt-auto flex items-center justify-between pt-3 border-t border-white/5">
+        {/* Card Footer */}
+        <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs font-mono">
           <div className="flex items-center gap-1.5 text-accent-green">
-            <Star className="w-3.5 h-3.5 fill-current" />
-            <span className="text-xs font-bold font-mono">{reseller.trust_score ?? 0}/100</span>
+            <Star className="w-3 h-3 fill-current" />
+            <span className="font-bold">{trustScore}/100</span>
+            <span className="text-[10px] text-text-muted font-normal">Score</span>
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-text-muted font-sans font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-accent-cyan" />
-            <span className="capitalize">{reseller.verification_status}</span>
-          </div>
+
+          <span className="text-[11px] text-accent-cyan group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+            <span>View Dossier</span>
+            <ArrowUpRight className="w-3 h-3" />
+          </span>
         </div>
       </div>
     </Link>

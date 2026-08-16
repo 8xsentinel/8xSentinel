@@ -113,6 +113,15 @@ export const trustedResellers = pgTable('trusted_resellers', {
   verifiedByRegionalAdminId: text('verified_by_regional_admin_id'),
   verifiedByRegionalAdminName: text('verified_by_regional_admin_name'),
   isActive: boolean('is_active').notNull().default(true),
+  
+  // Tier 2 Sentinel Trusted Fields
+  govIdUrl: text('gov_id_url'),
+  selfieUrl: text('selfie_url'),
+  locationLat: varchar('location_lat', { length: 50 }),
+  locationLng: varchar('location_lng', { length: 50 }),
+  tier: integer('tier').notNull().default(1),
+  tier2Status: varchar('tier2_status', { length: 50 }).notNull().default('not_applied'),
+  
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -129,3 +138,24 @@ export const resellerReviews = pgTable('reseller_reviews', {
   isVisible: boolean('is_visible').notNull().default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+// Reseller Peer Trust Votes Table
+export const resellerVotes = pgTable('reseller_votes', {
+  id: text('id').primaryKey(),
+  resellerId: text('reseller_id').references(() => trustedResellers.id).notNull(),
+  voterId: text('voter_id').references(() => profiles.id).notNull(),
+  voteType: varchar('vote_type', { length: 50 }).notNull().default('trust'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Escrow Partnerships Table
+export const escrowPartnerships = pgTable('escrow_partnerships', {
+  id: text('id').primaryKey(),
+  resellerId: text('reseller_id').references(() => trustedResellers.id).notNull(),
+  partnerResellerId: text('partner_reseller_id').references(() => trustedResellers.id).notNull(),
+  status: varchar('status', { length: 50 }).notNull().default('active'),
+  terms: text('terms'),
+  dealsBrokered: integer('deals_brokered').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+

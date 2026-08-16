@@ -1,5 +1,13 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { 
+  initializeAuth, 
+  browserLocalPersistence, 
+  browserPopupRedirectResolver, 
+  inMemoryPersistence, 
+  getAuth, 
+  Auth 
+} from 'firebase/auth';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, Analytics, isSupported } from 'firebase/analytics';
 
 // Your web app's Firebase configuration
@@ -13,21 +21,34 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-GKLTGYN1LG"
 };
 
-// Initialize Firebase safely for SSR & client environments
-let app: FirebaseApp;
-let auth: Auth;
-let analytics: Analytics | null = null;
+let appInstance: FirebaseApp | null = null;
+let authInstance: Auth | null = null;
 
-try {
-  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  auth = getAuth(app);
-} catch (error) {
-  console.warn('Firebase initialization error, attempting fallback:', error);
-  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig, 'fallback');
-  auth = getAuth(app);
+export function getFirebaseApp(): FirebaseApp {
+  if (appInstance) return appInstance;
+  appInstance = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  return appInstance;
 }
 
-// Initialize Firebase Analytics in client environment only
+export function getFirebaseAuth(): Auth {
+  if (authInstance) return authInstance;
+  const app = getFirebaseApp();
+  try {
+    authInstance = initializeAuth(app, {
+      persistence: typeof window !== 'undefined' ? browserLocalPersistence : inMemoryPersistence,
+      popupRedirectResolver: typeof window !== 'undefined' ? browserPopupRedirectResolver : undefined
+    });
+  } catch {
+    authInstance = getAuth(app);
+  }
+  return authInstance;
+}
+
+export const app: FirebaseApp = getFirebaseApp();
+export const auth: Auth = getFirebaseAuth();
+export const storage: FirebaseStorage = getStorage(app);
+
+let analytics: Analytics | null = null;
 if (typeof window !== 'undefined') {
   isSupported().then((supported) => {
     if (supported) {
@@ -37,9 +58,7 @@ if (typeof window !== 'undefined') {
         console.warn('Firebase Analytics initialization error:', err);
       }
     }
-  }).catch(() => {
-    // Ignore analytics if not supported in environment
-  });
+  }).catch(() => {});
 }
 
-export { app, auth, analytics, firebaseConfig };
+export { analytics, firebaseConfig };

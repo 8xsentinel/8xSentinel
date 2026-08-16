@@ -20,11 +20,11 @@ export default function AboutPage() {
 
       <div className="glass-panel rounded-2xl p-8 space-y-6 leading-relaxed text-text-secondary text-base">
         <p>
-          The gaming trading community has historically been plagued by bad actors, impersonators, and fraudulent escrow runners. 
-          <strong className="text-white font-bold"> 8xSentinel</strong> was built to solve this once and for all. We are a community-powered trust and blacklist registry that provides transparent, real-time threat intelligence on active scammers and spotlights authenticated merchants.
+          The BGMI account and skins trading community has historically been plagued by bad actors, impersonators, and fraudulent scammers. 
+          <strong className="text-white font-bold"> 8xSentinel</strong> was built by Resellers for all Resellers across the community. We provide transparent, real-time threat intelligence on active scammers and spotlight authenticated BGMI reseller stores operating on WhatsApp and Telegram.
         </p>
         <p>
-          Our platform combines automated identifier clustering, community dispute filings, and experienced human moderation to protect buyer capital and restore honor to digital trading.
+          Our platform combines automated identifier clustering, community dispute filings, and peer reseller trust clearances to protect buyer capital, eliminate fraud, and help every reseller know their trusted peers across all Indian states.
         </p>
       </div>
 
@@ -34,10 +34,10 @@ export default function AboutPage() {
             <ShieldCheck className="w-6 h-6 text-accent-cyan" />
           </div>
           <h3 className="text-lg font-bold text-white uppercase tracking-wide" style={{ fontFamily: 'var(--font-h)' }}>
-            Verification System
+            Reseller Verification
           </h3>
           <p className="text-xs text-text-secondary leading-relaxed">
-            Multi-point merchant audits ensure sellers are genuine, binding contact coordinates and regional vouch clearances.
+            Multi-point store audits ensure BGMI resellers are genuine, binding official WhatsApp and Telegram handles with state peer endorsements.
           </p>
         </div>
 

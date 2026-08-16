@@ -14,9 +14,10 @@ import { motion } from 'framer-motion';
 
 import StatCounter from '../ui/StatCounter';
 import CyberButton from '../ui/CyberButton';
+import { db } from '../../lib/db';
 
 interface HeroSectionProps {
-  stats?: {
+  initialStats?: {
     totalReports?: number;
     totalScammers?: number;
     totalProtected?: number;
@@ -25,15 +26,34 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({
-  stats = {},
+  initialStats,
 }: HeroSectionProps) {
-  // Safe fallback values
-  const safeStats = {
-    totalReports: stats.totalReports ?? 1420,
-    totalScammers: stats.totalScammers ?? 384,
-    totalProtected: stats.totalProtected ?? 6250000,
-    verifiedSellers: stats.verifiedSellers ?? 48,
-  };
+  const [liveStats, setLiveStats] = React.useState({
+    totalReports: initialStats?.totalReports ?? 0,
+    totalScammers: initialStats?.totalScammers ?? 0,
+    totalProtected: initialStats?.totalProtected ?? 0,
+    verifiedSellers: initialStats?.verifiedSellers ?? 0,
+  });
+
+  React.useEffect(() => {
+    let isMounted = true;
+    db.getPlatformStats().then((data) => {
+      if (isMounted && data) {
+        setLiveStats({
+          totalReports: data.reports ?? 0,
+          totalScammers: data.scammers ?? 0,
+          totalProtected: data.totalLoss ?? 0,
+          verifiedSellers: data.resellers ?? 0,
+        });
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const safeStats = liveStats;
 
   return (
     <section className="relative min-h-[92vh] flex flex-col items-center justify-center py-12 md:py-20 px-4 overflow-hidden border-b border-white/5">
@@ -171,7 +191,7 @@ export default function HeroSection({
             <div className="flex items-center gap-2 text-text-muted">
               <Users className="w-4 h-4 text-accent-green" />
               <span className="text-[11px] uppercase tracking-wider font-bold" style={{ fontFamily: 'var(--font-h)' }}>
-                Trusted Agents
+                BGMI Community
               </span>
             </div>
             <span className="text-3xl md:text-4xl font-extrabold font-mono text-accent-green text-glow-green">

@@ -41,10 +41,10 @@ export default function MissionSection() {
             </div>
             <div>
               <p className="text-lg font-bold text-white uppercase tracking-wide" style={{ fontFamily: 'var(--font-h)' }}>
-                Community First
+                Built By Resellers
               </p>
               <p className="text-xs text-text-secondary mt-1 font-sans leading-relaxed">
-                Built by gamers for gamers. We safeguard marketplace channels and keep trader reputation intelligence transparent.
+                Built by Resellers for all Resellers across the BGMI community. Beware of scammers, verify store handles, and know everyone in the ecosystem.
               </p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ExternalLink, ImageIcon, Video, Link2 } from 'lucide-react';
+import { ExternalLink, ImageIcon, Video, Link2, FolderOpen, Send } from 'lucide-react';
 import { EvidenceLink as EvidenceLinkType } from '../../types';
 
 interface EvidenceLinkProps {
@@ -9,9 +9,13 @@ interface EvidenceLinkProps {
 }
 
 const typeConfig: Record<string, { icon: React.ElementType; label: string; color: string }> = {
-  screenshot: { icon: ImageIcon, label: 'Screenshot', color: 'text-accent-cyan' },
-  video:      { icon: Video,     label: 'Video',      color: 'text-accent-purple' },
-  link:       { icon: Link2,     label: 'Link',       color: 'text-accent-green' },
+  drive:      { icon: FolderOpen, label: 'Google Drive',  color: 'text-accent-cyan' },
+  telegram:   { icon: Send,       label: 'Telegram Proof',color: 'text-sky-400' },
+  screenshot: { icon: ImageIcon,  label: 'Screenshot',    color: 'text-emerald-400' },
+  image:      { icon: ImageIcon,  label: 'Image',         color: 'text-emerald-400' },
+  video:      { icon: Video,      label: 'Video',         color: 'text-accent-purple' },
+  youtube:    { icon: Video,      label: 'YouTube Video', color: 'text-accent-purple' },
+  link:       { icon: Link2,      label: 'Link',          color: 'text-accent-green' },
 };
 
 export default function EvidenceLink({ evidence }: EvidenceLinkProps) {

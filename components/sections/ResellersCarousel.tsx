@@ -34,7 +34,7 @@ export default function ResellersCarousel() {
         <div className="space-y-3">
           <div className="badge badge-green">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>VERIFIED MERCHANTS</span>
+            <span>VERIFIED RESELLERS</span>
           </div>
           <h2 
             className="text-3xl md:text-5xl font-extrabold uppercase tracking-tight text-white"
@@ -43,7 +43,7 @@ export default function ResellersCarousel() {
             Trusted <span className="g">Resellers</span>
           </h2>
           <p className="text-text-secondary text-sm max-w-md font-sans leading-relaxed">
-            Eliminate counterparty risk. These merchants hold authenticated regional clearances and verified escrow track records.
+            Built by Resellers for Resellers. These BGMI store operators hold authenticated WhatsApp & Telegram credentials and peer trust clearances.
           </p>
         </div>
 
