@@ -98,16 +98,16 @@ function SearchContent() {
       {queryParam && (
         <div className="space-y-6">
           {/* Results Filter controls */}
-          <div className="flex flex-wrap items-center justify-between border-b border-white/5 pb-3 gap-4">
-            <div className="flex items-center gap-1.5 text-xs text-text-muted">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/5 pb-3 gap-3 sm:gap-4">
+            <div className="flex items-center gap-1.5 text-xs text-text-muted shrink-0">
               <Filter className="w-3.5 h-3.5 text-accent-cyan" />
               <span className="font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-h)' }}>Filter Results:</span>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto w-full sm:w-auto pb-2 -mb-2 sm:pb-0 sm:mb-0 snap-x hide-scrollbar">
               <button
                 onClick={() => setFilterType('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all whitespace-nowrap snap-start shrink-0 ${
                   filterType === 'all'
                     ? 'border-accent-cyan text-accent-cyan bg-accent-cyan/15'
                     : 'border-white/5 text-text-secondary hover:text-white'
@@ -118,7 +118,7 @@ function SearchContent() {
               </button>
               <button
                 onClick={() => setFilterType('scammers')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all whitespace-nowrap snap-start shrink-0 ${
                   filterType === 'scammers'
                     ? 'border-accent-red text-accent-red bg-accent-red/15'
                     : 'border-white/5 text-text-secondary hover:text-white'
@@ -129,7 +129,7 @@ function SearchContent() {
               </button>
               <button
                 onClick={() => setFilterType('resellers')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all whitespace-nowrap snap-start shrink-0 ${
                   filterType === 'resellers'
                     ? 'border-accent-green text-accent-green bg-accent-green/15'
                     : 'border-white/5 text-text-secondary hover:text-white'

@@ -32,10 +32,8 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchStoreApp = async () => {
-    if (user) {
-      const updatedProfile = refreshProfile ? refreshProfile() : null;
-      const profileId = updatedProfile?.id || profile?.id || '';
-      const app = await db.getUserStoreApplication(profileId);
+    if (user && profile?.id) {
+      const app = await db.getUserStoreApplication(profile.id);
       setStoreApp(app);
       return app;
     }
@@ -43,7 +41,7 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
 
   useEffect(() => {
     fetchStoreApp();
-  }, [user, profile]);
+  }, [user, profile?.id]);
 
   const handleRefreshStatus = async () => {
     setRefreshing(true);

@@ -36,7 +36,7 @@ export default function HeroSection({
   };
 
   return (
-    <section className="relative min-h-[92vh] flex flex-col items-center justify-center py-20 px-4 overflow-hidden border-b border-white/5">
+    <section className="relative min-h-[92vh] flex flex-col items-center justify-center py-12 md:py-20 px-4 overflow-hidden border-b border-white/5">
       {/* Background Hero Banner + Dark Gradient Overlays */}
       <div 
         className="absolute inset-0 bg-cover bg-center pointer-events-none opacity-20 filter saturate-150"
@@ -68,7 +68,7 @@ export default function HeroSection({
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight uppercase leading-[1.05] select-none text-white"
+            className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight uppercase leading-[1.05] select-none text-white"
             style={{ fontFamily: 'var(--font-h)' }}
           >
             Search Before <br />

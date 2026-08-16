@@ -29,7 +29,7 @@ export default function ResellersCarousel() {
   }, []);
 
   return (
-    <section className="py-20 px-4 max-w-6xl mx-auto space-y-8 border-b border-white/5 font-sans">
+    <section className="py-12 md:py-20 px-4 max-w-6xl mx-auto space-y-8 border-b border-white/5 font-sans">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-3">
           <div className="badge badge-green">

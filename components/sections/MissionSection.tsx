@@ -3,7 +3,7 @@ import { ShieldCheck, Users } from 'lucide-react';
 
 export default function MissionSection() {
   return (
-    <section className="relative py-24 px-4 bg-[#080a0f] border-b border-white/5 overflow-hidden font-sans">
+    <section className="relative py-16 md:py-24 px-4 bg-[#080a0f] border-b border-white/5 overflow-hidden font-sans">
       {/* Subtle Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-accent-cyan/5 blur-[120px] rounded-full pointer-events-none" />
 

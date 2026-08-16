@@ -32,7 +32,7 @@ export default function SearchSection() {
   const hasAnyResults = hasScammers || hasResellers;
 
   return (
-    <section className="py-20 px-4 max-w-6xl mx-auto space-y-10 border-b border-white/5 font-sans">
+    <section className="py-12 md:py-20 px-4 max-w-6xl mx-auto space-y-10 border-b border-white/5 font-sans">
       <div className="text-center space-y-3">
         <div className="badge badge-cyan mx-auto">
           INSTANT RADAR

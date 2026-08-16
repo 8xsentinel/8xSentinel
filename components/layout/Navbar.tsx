@@ -196,7 +196,7 @@ export default function Navbar() {
 
         <div
           ref={drawerRef}
-          className={`ag-drawer fixed top-0 right-0 bottom-0 w-[85%] sm:w-[340px] bg-[#080a0f]/95 backdrop-blur-2xl border-l border-white/10 z-[9999] overflow-y-auto px-6 py-6 transition-transform duration-300 ease-out flex flex-col justify-between shadow-[0_0_50px_rgba(0,0,0,0.8)] ${
+          className={`ag-drawer fixed top-0 right-0 bottom-0 w-[85%] sm:w-[340px] bg-[#080a0f]/95 backdrop-blur-2xl border-l border-white/10 z-[9999] overflow-y-auto px-6 pt-6 pb-12 sm:pb-6 transition-transform duration-300 ease-out flex flex-col justify-between shadow-[0_0_50px_rgba(0,0,0,0.8)] ${
             mobileOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >

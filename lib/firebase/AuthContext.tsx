@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import {
   User,
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
@@ -100,7 +100,7 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
 
   const signInWithGoogle = useCallback(async () => {
     if (!auth) throw new Error('Firebase Auth not initialized');
-    await signInWithPopup(auth, googleProvider);
+    await signInWithRedirect(auth, googleProvider);
   }, []);
 
   const signOut = useCallback(async () => {

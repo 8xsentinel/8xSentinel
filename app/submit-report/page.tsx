@@ -146,7 +146,7 @@ export default function SubmitReportPage() {
               const active = idx + 1 === step;
               const completed = idx + 1 < step;
               return (
-                <div key={idx} className="flex items-center gap-1">
+                <div key={idx} className="flex items-center gap-1.5 shrink-0">
                   <span className={`
                     w-5 h-5 rounded-full border flex items-center justify-center font-bold
                     ${active ? 'border-accent-cyan text-accent-cyan bg-accent-cyan/5' : ''}
@@ -163,7 +163,7 @@ export default function SubmitReportPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-4 sm:p-6 space-y-6">
           
           {/* STEP 1: Scammer Identity */}
           {step === 1 && (

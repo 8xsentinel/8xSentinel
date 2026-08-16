@@ -30,7 +30,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section className="py-20 px-4 max-w-6xl mx-auto space-y-12 border-b border-white/5">
+    <section className="py-12 md:py-20 px-4 max-w-6xl mx-auto space-y-12 border-b border-white/5">
       <div className="text-center space-y-3">
         <div className="badge badge-cyan mx-auto">
           SECURITY PROTOCOL

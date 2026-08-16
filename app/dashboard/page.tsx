@@ -59,24 +59,24 @@ export default function DashboardPage() {
         </div>
 
       <Tabs defaultValue={isReseller ? "profile" : "reports"} className="w-full space-y-6">
-        <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent flex-wrap gap-y-2">
+        <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent overflow-x-auto hide-scrollbar snap-x whitespace-nowrap">
           {isReseller && (
             <>
-              <TabsTrigger value="profile" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3">
+              <TabsTrigger value="profile" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3 shrink-0 snap-start">
                 My Profile
               </TabsTrigger>
-              <TabsTrigger value="verification" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3">
+              <TabsTrigger value="verification" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3 shrink-0 snap-start">
                 Verification Status
               </TabsTrigger>
-              <TabsTrigger value="appeals" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3">
+              <TabsTrigger value="appeals" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3 shrink-0 snap-start">
                 Appeals & Reports
               </TabsTrigger>
             </>
           )}
-          <TabsTrigger value="reports" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3">
+          <TabsTrigger value="reports" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3 shrink-0 snap-start">
             My Submitted Reports
           </TabsTrigger>
-          <TabsTrigger value="saved" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3">
+          <TabsTrigger value="saved" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3 shrink-0 snap-start">
             Saved Profiles
           </TabsTrigger>
         </TabsList>
