@@ -9,6 +9,7 @@ import EvidenceLink from '../../../components/ui/EvidenceLink';
 import { db } from '../../../lib/db';
 import { ScammerEntity, ScamReport } from '../../../types';
 import { AlertCircle, IndianRupee, Calendar, User, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 
 export default function ScammerProfilePage() {
   const params = useParams();
@@ -82,7 +83,11 @@ export default function ScammerProfilePage() {
   const knownIds = entity.known_identifiers || {};
 
   return (
-    <div className="max-w-5xl mx-auto py-12 px-4 space-y-8 font-sans">
+    <ProtectedRoute
+      title="Threat Intelligence Clearance Required"
+      description="Authentication is strictly required to view scammer entity dossiers, blacklisted bank accounts, associated Telegram/WhatsApp markers, and victim incident filings."
+    >
+      <div className="max-w-5xl mx-auto py-12 px-4 space-y-8 font-sans">
       {/* Risk Banner Alert */}
       <div className={`w-full py-2.5 px-4 rounded-xl text-center text-xs font-bold uppercase tracking-wider ${bannerClass}`} style={{ fontFamily: 'var(--font-h)' }}>
         ⚠️ Blacklist File Status: {entity.risk_level} threat level · Extreme Precaution Advised
@@ -310,6 +315,7 @@ export default function ScammerProfilePage() {
             })}
           </div>
         </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

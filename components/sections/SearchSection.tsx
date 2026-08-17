@@ -4,11 +4,14 @@ import React, { useState } from 'react';
 import SearchBar from '../ui/SearchBar';
 import ScammerCard from '../ui/ScammerCard';
 import SellerCard from '../ui/SellerCard';
+import AuthButton from '../auth/AuthButton';
 import { db } from '../../lib/db';
 import { ScammerEntity, TrustedReseller } from '../../types';
-import { ShieldCheck, Info } from 'lucide-react';
+import { useAuth } from '../../lib/firebase/AuthContext';
+import { ShieldCheck, Info, Lock } from 'lucide-react';
 
 export default function SearchSection() {
+  const { user } = useAuth();
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<{ scammers: ScammerEntity[]; resellers: TrustedReseller[] }>({
@@ -52,7 +55,26 @@ export default function SearchSection() {
       <SearchBar onSearch={handleSearchSubmit} isLoading={loading} />
 
       {/* Results presentation */}
-      {searched && !loading && (
+      {searched && !loading && !user && (
+        <div className="max-w-xl mx-auto p-8 rounded-2xl glass-panel border border-accent-cyan/30 text-center space-y-4 shadow-[0_0_50px_rgba(6,182,212,0.1)]">
+          <div className="w-16 h-16 rounded-2xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center mx-auto text-accent-cyan">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-xl font-bold text-white uppercase tracking-wider" style={{ fontFamily: 'var(--font-h)' }}>
+              Authentication Required
+            </h3>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              To protect against automated harvesting, full radar search matches and threat intelligence dossiers require user authentication.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center">
+            <AuthButton />
+          </div>
+        </div>
+      )}
+
+      {searched && !loading && user && (
         <div className="space-y-6 max-w-4xl mx-auto pt-4">
           {!hasAnyResults && (
             <div className="flex items-start gap-3 p-6 rounded-2xl glass-panel border border-emerald-500/25 text-emerald-400">

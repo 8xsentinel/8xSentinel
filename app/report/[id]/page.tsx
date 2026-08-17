@@ -469,5 +469,6 @@ export default function ReportDetailPage() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   );
 }
