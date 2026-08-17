@@ -103,14 +103,14 @@ export default function Navbar() {
             {/* Brand Logo */}
             <Link
               href="/"
-              className="flex items-center gap-2.5 group transition-transform duration-200 hover:scale-[1.02]"
+              className="flex items-center gap-2 sm:gap-2.5 shrink-0 group transition-transform duration-200 hover:scale-[1.02]"
             >
               <div className="relative flex items-center justify-center">
-                <Shield className="w-7 h-7 text-accent-cyan transition-transform duration-300 group-hover:scale-110" />
+                <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-accent-cyan transition-transform duration-300 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-accent-cyan/20 blur-md rounded-full -z-10 animate-pulse" />
               </div>
               <span
-                className="font-bold text-xl tracking-wider uppercase text-white"
+                className="font-bold text-base sm:text-xl tracking-wider uppercase text-white"
                 style={{ fontFamily: "var(--font-h)" }}
               >
                 8x<span className="g">SENTINEL</span>
@@ -183,20 +183,18 @@ export default function Navbar() {
 
             {/* Right Actions & Auth */}
             <div className="hidden lg:flex items-center gap-4">
-
-
               <AuthButton />
             </div>
 
             {/* Mobile Menu Trigger */}
-            <div className="lg:hidden flex items-center gap-3">
+            <div className="lg:hidden flex items-center gap-2 shrink-0">
               <AuthButton />
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors focus:outline-none"
+                className="text-gray-300 hover:text-white p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition-colors focus:outline-none min-w-[36px] min-h-[36px] flex items-center justify-center"
                 aria-label="Toggle Navigation Menu"
               >
-                {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
           </div>

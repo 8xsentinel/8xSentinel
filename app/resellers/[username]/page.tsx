@@ -40,6 +40,7 @@ import { useAuth } from '@/lib/firebase/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const WhatsAppLogo = (props: React.ComponentProps<'svg'>) => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" {...props}>
@@ -214,7 +215,11 @@ export default function ResellerProfilePage() {
   const hasCurrentUserVouched = votes.some(v => v.voter_id === profile?.id || v.voterId === profile?.id);
 
   return (
-    <div className="max-w-6xl mx-auto py-10 px-4 space-y-8 font-sans">
+    <ProtectedRoute
+      title="Verified Reseller Clearance Required"
+      description="Authentication is strictly required to view Sentinel Verified store dossiers, direct contact numbers, peer endorsements, and escrow partnerships."
+    >
+      <div className="max-w-6xl mx-auto py-10 px-4 space-y-8 font-sans">
       
       {/* Top Breadcrumb & Action Bar */}
       <div className="flex items-center justify-between gap-4 text-xs font-mono">
@@ -779,5 +784,6 @@ export default function ResellerProfilePage() {
         </DialogContent>
       </Dialog>
     </div>
+    </ProtectedRoute>
   );
 }

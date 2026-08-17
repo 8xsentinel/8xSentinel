@@ -25,10 +25,17 @@ import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireRole?: 'admin' | 'reseller';
+  requireRole?: 'admin' | 'reseller' | 'user';
+  title?: string;
+  description?: string;
 }
 
-export default function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
+export default function ProtectedRoute({ 
+  children, 
+  requireRole = 'user',
+  title = 'Sentinel Clearance Required',
+  description = 'Authentication is strictly required to view the global scammer registry, verify state resellers, or inspect threat dossiers.'
+}: ProtectedRouteProps) {
   const { user, profile, isSuperAdmin, loading, signOut, refreshProfile } = useAuth();
   const [storeApp, setStoreApp] = useState<TrustedReseller | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -43,8 +50,10 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
   };
 
   useEffect(() => {
-    fetchStoreApp();
-  }, [user, profile?.id]);
+    if (requireRole === 'reseller') {
+      fetchStoreApp();
+    }
+  }, [user, profile?.id, requireRole]);
 
   const handleRefreshStatus = async () => {
     setRefreshing(true);
@@ -78,20 +87,20 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
   // 2. Unauthenticated State
   if (!user) {
     return (
-      <div className="container py-32 max-w-lg mx-auto text-center space-y-6 font-sans px-4">
-        <div className="w-24 h-24 rounded-2xl bg-gradient-to-b from-[#0e1320] to-[#07090f] border border-white/10 flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(0,184,255,0.1)] relative overflow-hidden">
+      <div className="container py-24 max-w-lg mx-auto text-center space-y-6 font-sans px-4">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-b from-[#0e1320] to-[#07090f] border border-white/10 flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(0,184,255,0.1)] relative overflow-hidden">
           <div className="absolute inset-0 bg-accent-cyan/10 blur-xl" />
-          <ShieldAlert className="w-10 h-10 text-accent-cyan drop-shadow-[0_0_12px_rgba(0,184,255,0.5)] relative z-10" />
+          <ShieldAlert className="w-8 h-8 sm:w-10 sm:h-10 text-accent-cyan drop-shadow-[0_0_12px_rgba(0,184,255,0.5)] relative z-10" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold text-white uppercase tracking-widest" style={{ fontFamily: 'var(--font-h)' }}>
-            Access Denied
+          <h2 className="text-2xl sm:text-3xl font-bold text-white uppercase tracking-wider" style={{ fontFamily: 'var(--font-h)' }}>
+            {title}
           </h2>
-          <p className="text-text-secondary text-[13px] max-w-sm mx-auto leading-relaxed">
-            Authentication is strictly required to view the global scammer registry, verify state resellers, or file fraud reports.
+          <p className="text-text-secondary text-xs sm:text-[13px] max-w-sm mx-auto leading-relaxed">
+            {description}
           </p>
         </div>
-        <div className="pt-6 flex justify-center border-t border-white/5">
+        <div className="pt-4 flex justify-center border-t border-white/5">
           <AuthButton />
         </div>
       </div>
@@ -104,19 +113,39 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
     return <>{children}</>;
   }
 
-  // 4. Determine Effective Reseller Clearance Status
+  // 4. Admin Role Requirement Check
+  if (requireRole === 'admin') {
+    return (
+      <div className="container py-24 max-w-lg mx-auto text-center space-y-6 font-sans px-4">
+        <div className="w-20 h-20 rounded-2xl bg-accent-red/10 border border-accent-red/30 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+          <ShieldAlert className="w-10 h-10 text-accent-red" />
+        </div>
+        <h2 className="text-2xl font-bold text-white uppercase tracking-wider" style={{ fontFamily: 'var(--font-h)' }}>
+          Administrator Access Only
+        </h2>
+        <p className="text-text-secondary text-xs max-w-sm mx-auto">
+          You must be an authenticated 8xSentinel Super Administrator or Regional Administrator to access the moderation deck.
+        </p>
+      </div>
+    );
+  }
+
+  // 5. If only general user authentication is required, pass through
+  if (requireRole === 'user') {
+    return <>{children}</>;
+  }
+
+  // 6. Reseller Requirement Check (requireRole === 'reseller')
   const effectiveStatus = storeApp?.verification_status || profile?.store_status;
   const isApproved = effectiveStatus === 'approved';
   const isPending = effectiveStatus === 'pending';
   const isRejected = effectiveStatus === 'rejected';
   const isNotRegistered = !isApproved && !isPending && !isRejected;
 
-  // 5. Approved -> Pass Through
   if (isApproved && !showEditModal) {
     return <>{children}</>;
   }
 
-  // 6. Store Not Registered -> Force Onboarding Modal
   if (isNotRegistered || showEditModal) {
     return (
       <div className="relative min-h-[60vh]">

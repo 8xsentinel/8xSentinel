@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../../lib/firebase/AuthContext';
+import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 
 export default function ReportDetailPage() {
   const params = useParams();
@@ -134,7 +135,11 @@ export default function ReportDetailPage() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto py-12 px-4 space-y-8 font-sans">
+    <ProtectedRoute
+      title="Incident Dossier Clearance Required"
+      description="Authentication is strictly required to view scam incident details, banking identifiers, Telegram markers, victim recovery contact, and verified evidence links."
+    >
+      <div className="max-w-4xl mx-auto py-12 px-4 space-y-8 font-sans">
       {/* Navigation & Action Bar */}
       <div className="flex items-center justify-between">
         <Link 
