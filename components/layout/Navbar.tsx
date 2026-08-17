@@ -259,9 +259,9 @@ export default function Navbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold transition-colors ${
+                    className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[14px] font-semibold transition-all min-h-[44px] ${
                       isActive
-                        ? "text-accent-cyan bg-accent-cyan/10"
+                        ? "text-accent-cyan bg-accent-cyan/15 border border-accent-cyan/30"
                         : "text-gray-300 hover:text-white hover:bg-white/5"
                     }`}
                     style={{ fontFamily: "var(--font-h)" }}
@@ -272,12 +272,32 @@ export default function Navbar() {
                 );
               })}
 
+              {user && canAccessAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[14px] font-semibold transition-all min-h-[44px] ${
+                    isSuperAdmin
+                      ? "text-accent-red bg-accent-red/15 border border-accent-red/40"
+                      : "text-accent-purple bg-accent-purple/15 border border-accent-purple/40"
+                  }`}
+                  style={{ fontFamily: "var(--font-h)" }}
+                >
+                  {isSuperAdmin ? (
+                    <Crown className="w-4 h-4 text-accent-red animate-pulse" />
+                  ) : (
+                    <ShieldAlert className="w-4 h-4 text-accent-purple animate-pulse" />
+                  )}
+                  <span>{isSuperAdmin ? "Super Admin Deck" : "Command Deck"}</span>
+                </Link>
+              )}
+
               {user && !canAccessAdmin && (
                 userProfile?.store_status === 'not_registered' || !userProfile?.store_status ? (
                   <Link
                     href="/dashboard"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/40"
+                    className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-[14px] font-semibold bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/40 min-h-[44px]"
                     style={{ fontFamily: "var(--font-h)" }}
                   >
                     <Sparkles className="w-4 h-4 text-accent-cyan animate-pulse" />
@@ -287,9 +307,9 @@ export default function Navbar() {
                   <Link
                     href="/dashboard"
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] font-semibold transition-colors ${
+                    className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[14px] font-semibold transition-all min-h-[44px] ${
                       pathname === "/dashboard"
-                        ? "text-accent-cyan bg-accent-cyan/10"
+                        ? "text-accent-cyan bg-accent-cyan/15 border border-accent-cyan/30"
                         : "text-gray-300 hover:text-white hover:bg-white/5"
                     }`}
                     style={{ fontFamily: "var(--font-h)" }}
@@ -301,12 +321,11 @@ export default function Navbar() {
               )}
             </div>
 
-
           </div>
 
-          {/* Drawer Footer */}
-          <div className="pt-6 border-t border-white/10 text-center">
-            <p className="text-[11px] text-text-muted">
+          {/* Drawer Footer with Safe Area */}
+          <div className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border-t border-white/10 text-center">
+            <p className="text-[11px] text-text-muted font-mono">
               8xSentinel Security Protocol v1.0
             </p>
           </div>

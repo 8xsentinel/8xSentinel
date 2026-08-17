@@ -721,8 +721,8 @@ export const db = {
     if (reporter) {
       const profile = dbData.profiles.find(p => p.id === reporter.id);
       if (profile) {
-        profile.reports_submitted++;
-        profile.reputation_points += 10; // Award 10 rep points for submission
+        profile.reports_submitted = (profile.reports_submitted || 0) + 1;
+        profile.reputation_points = (profile.reputation_points || 0) + 10; // Award 10 rep points for submission
       }
     }
 

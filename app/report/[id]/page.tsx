@@ -227,11 +227,11 @@ export default function ReportDetailPage() {
             </p>
           </div>
 
-          {report.victim_phone_number && (
-            <a
-              href={`https://wa.me/${report.victim_phone_number.replace(/[^0-9]/g, '')}?text=Hi%2C%20I%20saw%20your%20fraud%20report%20on%208xSentinel%20against%20${encodeURIComponent(report.scammer_name)}.%20I%20have%20information%20to%20help%20recover%20your%20funds.`}
-              target="_blank"
-              rel="noreferrer"
+            {report.victim_phone_number && (
+              <a
+                href={`https://wa.me/${report.victim_phone_number.replace(/[^0-9]/g, '')}?text=Hi%2C%20I%20saw%20your%20fraud%20report%20on%208xSentinel%20against%20${encodeURIComponent(report.scammer_name || 'Scammer')}.%20I%20have%20information%20to%20help%20recover%20your%20funds.`}
+                target="_blank"
+                rel="noreferrer"
               className="shrink-0 bg-accent-amber/20 hover:bg-accent-amber/30 text-accent-amber border border-accent-amber/50 font-bold font-mono text-xs px-5 py-3 rounded-xl flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)]"
             >
               <Phone className="w-4 h-4 text-emerald-400" />

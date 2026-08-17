@@ -207,7 +207,12 @@ export default function AdminDashboardPage() {
       toast.error("Permission Denied: Only 8xSentinel Super Admin can appoint Regional Admins.");
       return;
     }
-    const updated = await db.assignRegionalAdmin(reseller.profile_id, selectedTargetState);
+    const profId = reseller.profile_id || reseller.profileId || reseller.profile?.id;
+    if (!profId) {
+      toast.error("Could not resolve profile ID for this store.");
+      return;
+    }
+    const updated = await db.assignRegionalAdmin(profId, selectedTargetState);
     if (updated) {
       toast.success(`Promoted ${reseller.store_name} to Regional Admin (${selectedTargetState})`, {
         description: "User now holds dual roles: Seller + State Regional Admin."
@@ -870,7 +875,7 @@ export default function AdminDashboardPage() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       {(r.profile?.avatarUrl || r.profile?.avatar_url) && (
-                        <img src={r.profile?.avatarUrl || r.profile?.avatar_url} alt="Profile" className="w-5 h-5 rounded-full border border-white/20 object-cover" />
+                        <img src={(r.profile?.avatarUrl || r.profile?.avatar_url) || ''} alt="Profile" className="w-5 h-5 rounded-full border border-white/20 object-cover" />
                       )}
                       <span className="font-bold text-white uppercase">{r.store_name}</span>
                       <Badge variant="outline" className="text-[10px] uppercase font-mono border-accent-cyan/30 text-accent-cyan">

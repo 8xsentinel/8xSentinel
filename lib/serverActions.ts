@@ -68,28 +68,57 @@ export async function registerUser(username: string, displayName: string) {
 // --- SEARCH ---
 export async function search(query: string, type: string) {
   try {
-    const cleanQuery = `%${query.trim().toLowerCase()}%`;
+    const trimmed = (query || '').trim();
+
+    // If query is empty, return all latest records for browsing
+    if (!trimmed) {
+      const [scammersResult, reportsResult, resellersResult] = await Promise.all([
+        db.select().from(scammerEntities).orderBy(desc(scammerEntities.createdAt)).limit(30),
+        db.select().from(scamReports).orderBy(desc(scamReports.createdAt)).limit(50),
+        db.select().from(trustedResellers).where(eq(trustedResellers.verificationStatus, 'approved')).orderBy(desc(trustedResellers.createdAt)).limit(30)
+      ]);
+
+      return {
+        scammers: scammersResult || [],
+        reports: reportsResult || [],
+        resellers: resellersResult || []
+      };
+    }
+
+    const cleanQuery = `%${trimmed.toLowerCase()}%`;
+    const rawQuery = trimmed.toLowerCase();
+    // Also stripped digits for phone/UID matching (e.g. "+91 909809890909" -> "909809890909")
+    const digitsOnly = trimmed.replace(/\D/g, '');
+    const cleanDigits = digitsOnly.length >= 4 ? `%${digitsOnly}%` : cleanQuery;
     
     // Search scammer entities (grouped approved profiles)
     const scammersResult = await db.select().from(scammerEntities)
       .where(or(
         ilike(scammerEntities.canonicalName, cleanQuery),
-        sql`${scammerEntities.knownIdentifiers}::text ILIKE ${cleanQuery}`
-      ));
+        sql`${scammerEntities.knownIdentifiers}::text ILIKE ${cleanQuery}`,
+        sql`${scammerEntities.adminNotes}::text ILIKE ${cleanQuery}`
+      ))
+      .limit(30);
 
-    // Also search individual scam reports directly (including pending ones)
+    // Search individual scam reports directly (including pending & approved ones)
     const reportsResult = await db.select().from(scamReports)
       .where(or(
         ilike(scamReports.scammerName, cleanQuery),
         ilike(scamReports.telegramUsername, cleanQuery),
         ilike(scamReports.whatsappNumber, cleanQuery),
+        ilike(scamReports.whatsappNumber, cleanDigits),
         ilike(scamReports.instagramUsername, cleanQuery),
         ilike(scamReports.upiId, cleanQuery),
-        ilike(scamReports.bgmiUid, cleanQuery)
+        ilike(scamReports.bgmiUid, cleanQuery),
+        ilike(scamReports.bgmiUid, cleanDigits),
+        sql`${scamReports.additionalIdentifiers}::text ILIKE ${cleanQuery}`,
+        sql`${scamReports.additionalIdentifiers}::text ILIKE ${cleanDigits}`,
+        sql`${scamReports.description}::text ILIKE ${cleanQuery}`
       ))
       .orderBy(desc(scamReports.createdAt))
       .limit(50);
 
+    // Search trusted resellers
     const resellersResult = await db.select().from(trustedResellers)
       .where(and(
         eq(trustedResellers.verificationStatus, 'approved'),
@@ -97,9 +126,13 @@ export async function search(query: string, type: string) {
           ilike(trustedResellers.storeName, cleanQuery),
           ilike(trustedResellers.telegramUsername, cleanQuery),
           ilike(trustedResellers.whatsappNumber, cleanQuery),
-          ilike(trustedResellers.instagramUsername, cleanQuery)
+          ilike(trustedResellers.whatsappNumber, cleanDigits),
+          ilike(trustedResellers.instagramUsername, cleanQuery),
+          ilike(trustedResellers.bgmiUid, cleanQuery),
+          sql`${trustedResellers.tagline}::text ILIKE ${cleanQuery}`
         )
-      ));
+      ))
+      .limit(30);
 
     return { 
       scammers: scammersResult || [], 
@@ -151,26 +184,49 @@ export async function getLatestApprovedReports(limit = 5) {
   }
 }
 
+export async function getAllReports(limit = 100) {
+  try {
+    const results = await db.select().from(scamReports)
+      .orderBy(desc(scamReports.createdAt))
+      .limit(limit);
+    return results || [];
+  } catch (error) {
+    console.error("Error in getAllReports:", error);
+    return [];
+  }
+}
+
+function sanitizeString(str?: string | null): string | undefined {
+  if (!str || typeof str !== 'string') return undefined;
+  return str
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<[^>]*>/g, '')
+    .trim();
+}
+
 export async function submitReport(reportData: Partial<ScamReport>) {
   try {
+    const rawDesc = reportData.description || '';
+    const cleanDesc = sanitizeString(rawDesc) || rawDesc.trim();
+
     const newReport = {
       id: `rep-${Date.now()}`,
       reporterId: reportData.reporter_id || 'anonymous',
-      scammerName: reportData.scammer_name,
-      telegramUsername: reportData.telegram_username,
-      whatsappNumber: reportData.whatsapp_number,
-      upiId: reportData.upi_id,
-      instagramUsername: reportData.instagram_username,
-      bgmiUid: reportData.bgmi_uid,
+      scammerName: sanitizeString(reportData.scammer_name) || reportData.scammer_name || 'Unknown Scammer',
+      telegramUsername: sanitizeString(reportData.telegram_username),
+      whatsappNumber: sanitizeString(reportData.whatsapp_number),
+      upiId: sanitizeString(reportData.upi_id),
+      instagramUsername: sanitizeString(reportData.instagram_username),
+      bgmiUid: sanitizeString(reportData.bgmi_uid),
       additionalIdentifiers: {
         ...(reportData.additional_identifiers as any || {}),
-        victim_phone_number: reportData.victim_phone_number || undefined,
+        victim_phone_number: sanitizeString(reportData.victim_phone_number) || undefined,
       },
-      description: reportData.description || '',
-      amountLost: Number(reportData.amount_lost) || 0,
+      description: cleanDesc,
+      amountLost: Math.max(0, Number(reportData.amount_lost) || 0),
       incidentDate: new Date(reportData.incident_date || Date.now()),
       scamType: reportData.scam_type || 'other',
-      evidenceLinks: reportData.evidence_links || [],
+      evidenceLinks: Array.isArray(reportData.evidence_links) ? reportData.evidence_links.slice(0, 10) : [],
       status: 'pending',
     };
 
@@ -493,32 +549,34 @@ export async function applyForReseller(storeData: any) {
     const existing = await db.select().from(trustedResellers).where(eq(trustedResellers.profileId, profileId)).limit(1);
     const mappedData = {
       profileId: profileId,
-      storeName: storeData.store_name || storeData.storeName || 'Store',
-      state: storeData.state,
-      region: storeData.region,
-      countryCode: storeData.country_code || storeData.countryCode || '+91',
+      storeName: sanitizeString(storeData.store_name || storeData.storeName) || 'Store',
+      state: sanitizeString(storeData.state),
+      region: sanitizeString(storeData.region),
+      countryCode: sanitizeString(storeData.country_code || storeData.countryCode) || '+91',
       primaryPlatform: storeData.primary_platform || storeData.primaryPlatform || 'whatsapp_primary',
-      whatsappNumber: storeData.whatsapp_number || storeData.whatsappNumber,
-      whatsappUsername: storeData.whatsapp_username || storeData.whatsappUsername,
-      whatsappGroupLink: storeData.whatsapp_group_link || storeData.whatsappGroupLink,
-      telegramUsername: storeData.telegram_username || storeData.telegramUsername,
-      telegramChannelLink: storeData.telegram_channel_link || storeData.telegramChannelLink,
+      whatsappNumber: sanitizeString(storeData.whatsapp_number || storeData.whatsappNumber),
+      whatsappUsername: sanitizeString(storeData.whatsapp_username || storeData.whatsappUsername),
+      whatsappGroupLink: sanitizeString(storeData.whatsapp_group_link || storeData.whatsappGroupLink),
+      telegramUsername: sanitizeString(storeData.telegram_username || storeData.telegramUsername),
+      telegramChannelLink: sanitizeString(storeData.telegram_channel_link || storeData.telegramChannelLink),
       operatingSinceYear: Number(storeData.operating_since_year || storeData.operatingSinceYear || 2022),
-      instagramUsername: storeData.instagram_username || storeData.instagramUsername,
+      instagramUsername: sanitizeString(storeData.instagram_username || storeData.instagramUsername),
       yearsActive: Number(storeData.years_active || storeData.yearsActive || 1),
-      bio: storeData.bio,
-      specializesIn: storeData.specializes_in || storeData.specializesIn || [],
+      bio: sanitizeString(storeData.bio),
+      specializesIn: Array.isArray(storeData.specializes_in || storeData.specializesIn) 
+        ? (storeData.specializes_in || storeData.specializesIn).map((s: string) => sanitizeString(s)).filter(Boolean)
+        : [],
     };
 
     if (existing.length > 0) {
       await db.update(trustedResellers).set(mappedData as any).where(eq(trustedResellers.id, existing[0].id));
-      await db.update(profiles).set({ storeStatus: 'pending', state: storeData.state }).where(eq(profiles.id, profileId));
+      await db.update(profiles).set({ storeStatus: 'pending', state: mappedData.state }).where(eq(profiles.id, profileId));
       return { ...existing[0], ...mappedData, verificationStatus: 'pending' };
     } else {
       const newId = `reseller-${Date.now()}`;
       const newEntry = { ...mappedData, id: newId, verificationStatus: 'pending' };
       await db.insert(trustedResellers).values(newEntry as any);
-      await db.update(profiles).set({ storeStatus: 'pending', state: storeData.state }).where(eq(profiles.id, profileId));
+      await db.update(profiles).set({ storeStatus: 'pending', state: mappedData.state }).where(eq(profiles.id, profileId));
       return newEntry;
     }
   } catch (error) {

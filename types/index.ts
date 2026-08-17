@@ -1,5 +1,5 @@
 export type UserRole = 'user' | 'verified_reseller' | 'regional_admin' | 'admin' | 'super_admin' | 'moderator' | 'seller';
-export type ScamReportStatus = 'pending' | 'approved' | 'rejected' | 'flagged';
+export type ScamReportStatus = 'pending' | 'approved' | 'rejected' | 'flagged' | 'withdrawn' | 'disputed';
 export type ScamType =
   | 'bank_account_freeze'
   | 'account_pullback'
@@ -27,25 +27,30 @@ export interface Profile {
   id: string;
   username: string;
   display_name: string | null;
+  displayName?: string | null;
   avatar_url: string | null;
+  avatarUrl?: string | null;
   role: UserRole;
   roles?: UserRole[];
   primary_email?: string | null;
+  primaryEmail?: string | null;
   region?: string | null;
   state?: string | null;
   store_status?: 'not_registered' | 'pending' | 'approved' | 'rejected' | 'suspended';
+  storeStatus?: 'not_registered' | 'pending' | 'approved' | 'rejected' | 'suspended';
   primary_platform?: 'whatsapp_primary' | 'telegram_primary' | 'whatsapp_only' | 'telegram_only' | 'both';
+  primaryPlatform?: 'whatsapp_primary' | 'telegram_primary' | 'whatsapp_only' | 'telegram_only' | 'both';
   country_code?: string | null;
   whatsapp_username?: string | null;
   whatsapp_group_link?: string | null;
   telegram_channel_link?: string | null;
   operating_since_year?: number | null;
-  is_banned: boolean;
-  ban_reason: string | null;
-  reputation_points: number;
-  reports_submitted: number;
-  created_at: string;
-  last_seen: string;
+  is_banned?: boolean;
+  ban_reason?: string | null;
+  reputation_points?: number;
+  reports_submitted?: number;
+  created_at?: string;
+  last_seen?: string;
 }
 
 export interface ScammerEntity {
@@ -108,33 +113,54 @@ export interface ScamReport {
 
 export interface TrustedReseller {
   id: string;
-  profile_id: string;
+  profile_id?: string;
+  profileId?: string;
   store_name: string;
-  tagline: string | null;
-  bio: string | null;
-  telegram_username: string | null;
+  storeName?: string;
+  tagline?: string | null;
+  bio?: string | null;
+  telegram_username?: string | null;
+  telegramUsername?: string | null;
   telegram_channel_link?: string | null;
-  whatsapp_number: string | null;
+  telegramChannelLink?: string | null;
+  whatsapp_number?: string | null;
+  whatsappNumber?: string | null;
   whatsapp_username?: string | null;
+  whatsappUsername?: string | null;
   whatsapp_group_link?: string | null;
-  instagram_username: string | null;
-  youtube_channel: string | null;
+  whatsappGroupLink?: string | null;
+  instagram_username?: string | null;
+  instagramUsername?: string | null;
+  youtube_channel?: string | null;
+  youtubeChannel?: string | null;
   bgmi_uid?: string | null;
   country_code?: string | null;
   primary_platform?: 'whatsapp_primary' | 'telegram_primary' | 'whatsapp_only' | 'telegram_only' | 'both';
+  primaryPlatform?: 'whatsapp_primary' | 'telegram_primary' | 'whatsapp_only' | 'telegram_only' | 'both';
   operating_since_year?: number | null;
   verification_status: ResellerVerificationStatus;
-  verified_at: string | null;
-  verified_by: string | null;
-  rejection_reason: string | null;
+  verificationStatus?: ResellerVerificationStatus;
+  tier?: number;
+  tier2_status?: 'not_applied' | 'pending' | 'approved' | 'rejected';
+  tier2Status?: 'not_applied' | 'pending' | 'approved' | 'rejected';
+  verified_at?: string | null;
+  verifiedAt?: string | null;
+  verified_by?: string | null;
+  rejection_reason?: string | null;
   trust_score: number; // 0 - 100
+  trustScore?: number;
   deals_completed: number;
+  dealsCompleted?: number;
   positive_feedback: number;
+  positiveFeedback?: number;
   negative_feedback: number;
+  negativeFeedback?: number;
   years_active: number;
+  yearsActive?: number;
   specializes_in: string[];
+  specializesIn?: string[];
   badges: Array<{ type: 'top_seller' | 'verified' | 'trusted_og'; earned_at: string }>;
-  price_range: string | null;
+  price_range?: string | null;
   region?: string | null;
   state?: string | null;
   verified_by_regional_admin_id?: string | null;

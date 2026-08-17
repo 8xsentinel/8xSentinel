@@ -58,6 +58,10 @@ export const db = {
     return convertKeysToSnakeCase(await serverActions.getLatestApprovedReports(limit)) as any;
   },
 
+  getAllReports: async (limit = 100): Promise<ScamReport[]> => {
+    return convertKeysToSnakeCase(await serverActions.getAllReports(limit)) as any;
+  },
+
   getUserReports: async (userId: string): Promise<ScamReport[]> => {
     return convertKeysToSnakeCase(await serverActions.getUserReports(userId)) as any;
   },
