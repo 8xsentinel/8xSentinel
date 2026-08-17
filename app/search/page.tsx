@@ -63,7 +63,7 @@ function SearchContent() {
   });
   const [loading, setLoading] = useState(true);
 
-  const { user, profile } = useAuth();
+  const { user, profile, canViewResellers } = useAuth();
   const isUserAuthenticated = !!user || !!profile;
 
   // Fetch search or default records whenever query/auth state changes
@@ -111,12 +111,6 @@ function SearchContent() {
     }
 
     if (scamTypeFilter !== 'all') {
-      list = list.filter(r => (r.scam_type || '').toLowerCase() === scamTypeFilter.toLowerCase());
-    }
-
-    if (sortBy === 'newest') {
-      list.sort((a, b) => new Date(b.incident_date || b.created_at).getTime() - new Date(a.incident_date || a.created_at).getTime());
-    } else if (sortBy === 'loss_high') {
       list.sort((a, b) => (Number(b.amount_lost) || 0) - (Number(a.amount_lost) || 0));
     } else if (sortBy === 'bounty_high') {
       list.sort((a, b) => {
@@ -280,17 +274,31 @@ function SearchContent() {
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-accent-cyan/30 transition-all flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            {canViewResellers ? (
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-accent-cyan/30 transition-all flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider block">Verified Resellers</span>
+                  <span className="text-xl font-bold text-emerald-400 font-mono" style={{ fontFamily: 'var(--font-h)' }}>
+                    {results.resellers.length}
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider block">Verified Resellers</span>
-                <span className="text-xl font-bold text-emerald-400 font-mono" style={{ fontFamily: 'var(--font-h)' }}>
-                  {results.resellers.length}
-                </span>
+            ) : (
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-accent-cyan/30 transition-all flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-accent-cyan" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider block">Sentinel Shield</span>
+                  <span className="text-xl font-bold text-accent-cyan font-mono" style={{ fontFamily: 'var(--font-h)' }}>
+                    24/7 Active
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Interactive Search Bar Component */}
@@ -298,7 +306,7 @@ function SearchContent() {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
                 <Search className="w-4 h-4 text-accent-cyan" />
-                <span>Search Global Blacklist &amp; Merchant Records</span>
+                <span>Search Global Blacklist &amp; Fraud Records</span>
               </span>
               {queryParam && (
                 <span className="text-[11px] text-accent-cyan font-mono">
@@ -329,7 +337,7 @@ function SearchContent() {
                   }`}
                   style={{ fontFamily: 'var(--font-h)' }}
                 >
-                  All Records ({totalBlacklistCount + results.resellers.length})
+                  All Records ({canViewResellers ? totalBlacklistCount + results.resellers.length : totalBlacklistCount})
                 </button>
 
                 <button
@@ -345,18 +353,20 @@ function SearchContent() {
                   <span>Scam Reports ({totalBlacklistCount})</span>
                 </button>
 
-                <button
-                  onClick={() => setFilterType('resellers')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border flex items-center gap-1.5 ${
-                    filterType === 'resellers'
-                      ? 'border-emerald-500 text-emerald-400 bg-emerald-500/15 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
-                      : 'border-white/5 bg-white/[0.02] text-text-secondary hover:text-white hover:border-white/15'
-                  }`}
-                  style={{ fontFamily: 'var(--font-h)' }}
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Verified Resellers ({results.resellers.length})</span>
-                </button>
+                {canViewResellers && (
+                  <button
+                    onClick={() => setFilterType('resellers')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border flex items-center gap-1.5 ${
+                      filterType === 'resellers'
+                        ? 'border-emerald-500 text-emerald-400 bg-emerald-500/15 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                        : 'border-white/5 bg-white/[0.02] text-text-secondary hover:text-white hover:border-white/15'
+                    }`}
+                    style={{ fontFamily: 'var(--font-h)' }}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Verified Resellers ({results.resellers.length})</span>
+                  </button>
+                )}
               </div>
 
               {/* Sub-Filters: Status, Scam Type, Sort */}

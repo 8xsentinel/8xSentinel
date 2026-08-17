@@ -101,7 +101,7 @@ export default function ResellerProfilePage() {
   const fetchResellerDetails = async () => {
     if (username) {
       setLoading(true);
-      const data = await db.getResellerProfile(username);
+      const data = await db.getResellerProfile(username, profile?.id);
       if (data) {
         setReseller(data.reseller);
         setVotes(data.votes || []);
@@ -113,7 +113,7 @@ export default function ResellerProfilePage() {
 
   useEffect(() => {
     fetchResellerDetails();
-  }, [username]);
+  }, [username, profile?.id]);
 
   const handleVoteTrust = async () => {
     if (!reseller) return;
@@ -216,6 +216,7 @@ export default function ResellerProfilePage() {
 
   return (
     <ProtectedRoute
+      requireRole="verified_reseller"
       title="Verified Reseller Clearance Required"
       description="Authentication is strictly required to view Sentinel Verified store dossiers, direct contact numbers, peer endorsements, and escrow partnerships."
     >

@@ -21,11 +21,11 @@ import { db } from "../../lib/db";
 import { Profile } from "../../types";
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
-  const pathname = usePathname();
-  const { user, isSuperAdmin, profile } = useAuth();
+  const { user, isSuperAdmin, profile, canViewResellers, isRegionalAdmin, isVerifiedReseller, isMember } = useAuth();
   const navRef = useRef<HTMLElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -68,13 +68,16 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Dynamic role-based navigation links
   const navLinks = [
     { label: "Registry Lookup", href: "/search", icon: Search },
     { label: "File Report", href: "/submit-report", icon: FileSpreadsheet },
-    { label: "Verified Resellers", href: "/resellers", icon: Users },
+    ...(canViewResellers
+      ? [{ label: "Verified Resellers", href: "/resellers", icon: Users }]
+      : []),
   ];
 
-  const canAccessAdmin = isSuperAdmin || userProfile?.role === "regional_admin";
+  const canAccessAdmin = isSuperAdmin || isRegionalAdmin || userProfile?.role === "regional_admin";
 
   const deskLinkStyle =
     "text-gray-300 hover:text-white font-sans text-[13.5px] font-medium tracking-wide px-3.5 py-2 transition-all duration-200 inline-flex items-center gap-1.5 rounded-lg hover:bg-white/5";
@@ -159,25 +162,15 @@ export default function Navbar() {
               )}
 
               {user && !canAccessAdmin && (
-                userProfile?.store_status === 'not_registered' || !userProfile?.store_status ? (
-                  <Link
-                    href="/dashboard"
-                    className="bg-accent-cyan/15 hover:bg-accent-cyan/25 text-accent-cyan border border-accent-cyan/40 px-3 py-1.5 rounded-lg text-xs font-mono font-bold tracking-wider uppercase flex items-center gap-1.5 animate-pulse ml-1 transition-all"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Complete Onboarding</span>
-                  </Link>
-                ) : (
-                  <Link
-                    href="/dashboard"
-                    className={`${deskLinkStyle} ${
-                      pathname === "/dashboard" ? activeLinkStyle : ""
-                    }`}
-                  >
-                    <UserIcon className="w-4 h-4 text-accent-cyan opacity-80" />
-                    <span>Dashboard</span>
-                  </Link>
-                )
+                <Link
+                  href="/dashboard"
+                  className={`${deskLinkStyle} ${
+                    pathname === "/dashboard" ? activeLinkStyle : ""
+                  }`}
+                >
+                  <UserIcon className="w-4 h-4 text-accent-cyan opacity-80" />
+                  <span>{isVerifiedReseller ? "Store Deck" : "My Reports"}</span>
+                </Link>
               )}
             </nav>
 
@@ -291,31 +284,19 @@ export default function Navbar() {
               )}
 
               {user && !canAccessAdmin && (
-                userProfile?.store_status === 'not_registered' || !userProfile?.store_status ? (
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-[14px] font-semibold bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/40 min-h-[44px]"
-                    style={{ fontFamily: "var(--font-h)" }}
-                  >
-                    <Sparkles className="w-4 h-4 text-accent-cyan animate-pulse" />
-                    <span>Complete Onboarding</span>
-                  </Link>
-                ) : (
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[14px] font-semibold transition-all min-h-[44px] ${
-                      pathname === "/dashboard"
-                        ? "text-accent-cyan bg-accent-cyan/15 border border-accent-cyan/30"
-                        : "text-gray-300 hover:text-white hover:bg-white/5"
-                    }`}
-                    style={{ fontFamily: "var(--font-h)" }}
-                  >
-                    <UserIcon className="w-4 h-4 text-accent-cyan" />
-                    <span>Dashboard</span>
-                  </Link>
-                )
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[14px] font-semibold transition-all min-h-[44px] ${
+                    pathname === "/dashboard"
+                      ? "text-accent-cyan bg-accent-cyan/15 border border-accent-cyan/30"
+                      : "text-gray-300 hover:text-white hover:bg-white/5"
+                  }`}
+                  style={{ fontFamily: "var(--font-h)" }}
+                >
+                  <UserIcon className="w-4 h-4 text-accent-cyan" />
+                  <span>{isVerifiedReseller ? "Store Deck" : "My Reports"}</span>
+                </Link>
               )}
             </div>
 

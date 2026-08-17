@@ -6,27 +6,31 @@ import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { db } from '../../lib/db';
 import { TrustedReseller } from '../../types';
 import SellerCard from '../ui/SellerCard';
+import { useAuth } from '../../lib/firebase/AuthContext';
 
 export default function ResellersCarousel() {
+  const { profile, canViewResellers } = useAuth();
   const [resellers, setResellers] = useState<TrustedReseller[]>([]);
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadResellers = async () => {
-      const data = await db.getResellers();
-
-      if (isMounted) {
-        setResellers(Array.isArray(data) ? data : []);
-      }
-    };
-
-    loadResellers();
+    if (canViewResellers && profile?.id) {
+      db.getResellers(profile.id).then((data) => {
+        if (isMounted) {
+          setResellers(Array.isArray(data) ? data : []);
+        }
+      });
+    }
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [canViewResellers, profile?.id]);
+
+  if (!canViewResellers) {
+    return null;
+  }
 
   return (
     <section className="py-12 md:py-20 px-4 max-w-6xl mx-auto space-y-8 border-b border-white/5 font-sans">

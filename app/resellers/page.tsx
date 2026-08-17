@@ -7,8 +7,10 @@ import { TrustedReseller } from '../../types';
 import { INDIAN_STATES, INDIA_REGIONS } from '../../lib/constants/indiaStates';
 import { Search, Filter, ShieldCheck, MapPin, Users, Building } from 'lucide-react';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
+import { useAuth } from '../../lib/firebase/AuthContext';
 
 export default function ResellersDirectory() {
+  const { profile } = useAuth();
   const [resellers, setResellers] = useState<TrustedReseller[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,11 +18,13 @@ export default function ResellersDirectory() {
   const [selectedState, setSelectedState] = useState<string>('all');
 
   useEffect(() => {
-    db.getResellers().then((data) => {
-      setResellers(data || []);
-      setLoading(false);
-    });
-  }, []);
+    if (profile?.id) {
+      db.getResellers(profile.id).then((data) => {
+        setResellers(data || []);
+        setLoading(false);
+      });
+    }
+  }, [profile?.id]);
 
   // Filtering logic
   const filteredResellers = resellers.filter((reseller) => {
@@ -51,7 +55,7 @@ export default function ResellersDirectory() {
     : INDIAN_STATES.filter(s => s.region.toLowerCase() === selectedRegion.toLowerCase());
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requireRole="verified_reseller">
       <div className="max-w-7xl mx-auto py-12 px-4 space-y-8 font-sans">
       {/* Header Section */}
       <div className="space-y-3">

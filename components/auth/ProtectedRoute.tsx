@@ -1,78 +1,58 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '../../lib/firebase/AuthContext';
 import { db } from '../../lib/db';
 import { TrustedReseller } from '../../types';
 import AuthButton from './AuthButton';
-import StoreOnboardingModal from './StoreOnboardingModal';
+import UnifiedOnboardingModal from './UnifiedOnboardingModal';
+import { isSentinel, isRegionalAdmin, isVerifiedReseller, isMember } from '../../lib/permissions';
 import { 
   ShieldAlert, 
   Clock, 
-  MapPin, 
-  Building2, 
-  CheckCircle2, 
-  RefreshCw, 
-  LogOut, 
-  Edit3,
-  Lock,
-  UserCheck,
-  MessageSquare,
-  Phone,
-  Send
+  Lock, 
+  UserCheck, 
+  FileText,
+  Search,
+  ShieldCheck,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireRole?: 'admin' | 'reseller' | 'user';
+  requireRole?: 'sentinel' | 'admin' | 'verified_reseller' | 'member';
   title?: string;
   description?: string;
 }
 
 export default function ProtectedRoute({ 
   children, 
-  requireRole = 'user',
+  requireRole = 'member',
   title = 'Sentinel Clearance Required',
-  description = 'Authentication is strictly required to view the global scammer registry, verify state resellers, or inspect threat dossiers.'
+  description = 'Authentication is strictly required to access this section of 8xSentinel.'
 }: ProtectedRouteProps) {
-  const { user, profile, isSuperAdmin, loading, signOut, refreshProfile } = useAuth();
-  const [storeApp, setStoreApp] = useState<TrustedReseller | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const { user, profile, loading, refreshProfile } = useAuth();
+  const [showOnboard, setShowOnboard] = useState(false);
 
-  const fetchStoreApp = async () => {
-    if (user && profile?.id) {
-      const app = await db.getUserStoreApplication(profile.id);
-      setStoreApp(app);
-      return app;
-    }
-  };
+  const sentinel = isSentinel(profile, user?.email);
+  const regionalAdmin = isRegionalAdmin(profile);
+  const verifiedReseller = isVerifiedReseller(profile);
+  const member = !sentinel && !regionalAdmin && !verifiedReseller;
 
+  // Check if new user needs to choose role and complete onboarding
   useEffect(() => {
-    if (requireRole === 'reseller') {
-      fetchStoreApp();
-    }
-  }, [user, profile?.id, requireRole]);
-
-  const handleRefreshStatus = async () => {
-    setRefreshing(true);
-    if (user) {
-      const updatedProfile = refreshProfile ? await refreshProfile() : null;
-      const profileId = updatedProfile?.id || profile?.id || '';
-      const app = await db.getUserStoreApplication(profileId);
-      setStoreApp(app);
-      if (app?.verification_status === 'approved' || updatedProfile?.store_status === 'approved') {
-        toast.success('Your store has been verified and approved!');
-        window.location.reload();
-      } else {
-        toast.info('Status: Under Review', {
-          description: `Still awaiting regional clearance for ${app?.state || 'your state'}.`
-        });
+    if (user && profile && !sentinel && !regionalAdmin && !verifiedReseller && requireRole === 'member') {
+      const isPlaceholderName = !profile.display_name || profile.display_name === 'Candidate' || profile.display_name === 'Sentinel Member';
+      const hasNoContact = !profile.whatsapp_username;
+      const isNotRegisteredStore = !profile.store_status || profile.store_status === 'not_registered';
+      
+      if ((isPlaceholderName || hasNoContact) && isNotRegisteredStore) {
+        setShowOnboard(true);
       }
     }
-    setTimeout(() => setRefreshing(false), 600);
-  };
+  }, [user, profile, sentinel, regionalAdmin, verifiedReseller, requireRole]);
 
   // 1. Loading State
   if (loading) {
@@ -107,186 +87,88 @@ export default function ProtectedRoute({
     );
   }
 
-  // 3. Super Admin & Regional Admin immediate clearance bypass
-  const isRegionalAdmin = profile?.role === 'regional_admin' || profile?.roles?.includes('regional_admin');
-  if (isSuperAdmin || isRegionalAdmin) {
+  // 3. Sentinel Root Admin immediate clearance bypass
+  if (sentinel) {
     return <>{children}</>;
   }
 
   // 4. Admin Role Requirement Check
-  if (requireRole === 'admin') {
-    return (
-      <div className="container py-24 max-w-lg mx-auto text-center space-y-6 font-sans px-4">
-        <div className="w-20 h-20 rounded-2xl bg-accent-red/10 border border-accent-red/30 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(239,68,68,0.2)]">
-          <ShieldAlert className="w-10 h-10 text-accent-red" />
+  if (requireRole === 'admin' || requireRole === 'sentinel') {
+    if (!regionalAdmin && !sentinel) {
+      return (
+        <div className="container py-24 max-w-lg mx-auto text-center space-y-6 font-sans px-4">
+          <div className="w-20 h-20 rounded-2xl bg-accent-red/10 border border-accent-red/30 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+            <ShieldAlert className="w-10 h-10 text-accent-red" />
+          </div>
+          <h2 className="text-2xl font-bold text-white uppercase tracking-wider" style={{ fontFamily: 'var(--font-h)' }}>
+            Administrator Access Only
+          </h2>
+          <p className="text-text-secondary text-xs max-w-sm mx-auto leading-relaxed">
+            You must be an authenticated 8xSentinel Super Administrator or Regional Administrator to access the moderation deck.
+          </p>
+          <div className="pt-4">
+            <Link href="/" className="btn btn-outline py-2.5 px-5 text-xs inline-flex items-center gap-2">
+              <span>Return to Sentinel Hub</span>
+            </Link>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-white uppercase tracking-wider" style={{ fontFamily: 'var(--font-h)' }}>
-          Administrator Access Only
-        </h2>
-        <p className="text-text-secondary text-xs max-w-sm mx-auto">
-          You must be an authenticated 8xSentinel Super Administrator or Regional Administrator to access the moderation deck.
-        </p>
-      </div>
-    );
-  }
-
-  // 5. If only general user authentication is required, pass through
-  if (requireRole === 'user') {
+      );
+    }
     return <>{children}</>;
   }
 
-  // 6. Reseller Requirement Check (requireRole === 'reseller')
-  const effectiveStatus = storeApp?.verification_status || profile?.store_status;
-  const isApproved = effectiveStatus === 'approved';
-  const isPending = effectiveStatus === 'pending';
-  const isRejected = effectiveStatus === 'rejected';
-  const isNotRegistered = !isApproved && !isPending && !isRejected;
-
-  if (isApproved && !showEditModal) {
-    return <>{children}</>;
-  }
-
-  if (isNotRegistered || showEditModal) {
-    return (
-      <div className="relative min-h-[60vh]">
-        <StoreOnboardingModal
-          initialData={storeApp || profile}
-          onComplete={async () => {
-            setShowEditModal(false);
-            if (refreshProfile) refreshProfile();
-            await fetchStoreApp();
-          }}
-        />
-        <div className="filter blur-md pointer-events-none opacity-30">
-          {children}
-        </div>
-      </div>
-    );
-  }
-
-  // 7. Store Status is Pending or Rejected -> Show Dedicated Security Review Gate
-  if (isPending || isRejected) {
-    const currentState = storeApp?.state || profile?.state || 'Selected State';
-    const currentRegion = storeApp?.region || profile?.region || 'India';
-
-    return (
-      <div className="container py-20 max-w-2xl mx-auto px-4 font-sans">
-        <div className="bg-gradient-to-b from-[#0e1322] via-[#090c14] to-[#07090f] border border-accent-amber/30 rounded-2xl p-6 md:p-10 shadow-[0_0_60px_rgba(245,158,11,0.08)] space-y-6 text-center relative overflow-hidden">
-          {/* Top Amber Status Bar */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent-amber to-transparent opacity-80" />
-
-          <div className="w-20 h-20 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 flex items-center justify-center mx-auto text-accent-amber shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-            {isRejected ? <ShieldAlert className="w-10 h-10 text-accent-red" /> : <Clock className="w-10 h-10 animate-pulse" />}
+  // 5. Verified Reseller Role Requirement Check
+  if (requireRole === 'verified_reseller') {
+    if (!verifiedReseller && !regionalAdmin && !sentinel) {
+      return (
+        <div className="container py-24 max-w-xl mx-auto text-center space-y-6 font-sans px-4">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-b from-[#18120b] to-[#0a0704] border border-accent-amber/40 flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(245,158,11,0.15)] relative overflow-hidden">
+            <div className="absolute inset-0 bg-accent-amber/10 blur-xl" />
+            <Lock className="w-9 h-9 text-accent-amber relative z-10" />
           </div>
 
           <div className="space-y-2">
-            <span className="text-[10px] font-mono font-bold tracking-widest text-accent-amber uppercase px-3 py-1 rounded-full bg-accent-amber/10 border border-accent-amber/20 inline-block">
-              {isRejected ? 'Application Declined' : 'Reseller Review Pending'}
-            </span>
-            <h2 className="text-2xl md:text-3xl font-bold uppercase text-white tracking-wide" style={{ fontFamily: 'var(--font-h)' }}>
-              {isRejected ? 'Store Verification Declined' : 'Store Application Under Review'}
+            <div className="badge badge-amber mx-auto">
+              B2B RESELLER NETWORK RESTRICTED
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-wider" style={{ fontFamily: 'var(--font-h)' }}>
+              Verified Resellers Only
             </h2>
-            <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
-              {isRejected
-                ? storeApp?.rejection_reason || 'Your store application was not approved by moderators. You may update and resubmit your application.'
-                : `Your store profile has been submitted and is currently awaiting clearance from the Root Super Admin or the Regional Admin of ${currentState}.`}
+            <p className="text-text-secondary text-xs sm:text-[13px] max-w-md mx-auto leading-relaxed font-sans">
+              The Verified Resellers Network and merchant dossiers are exclusively accessible to Sentinel Verified Resellers and Administrators.
+            </p>
+            <p className="text-text-muted text-[11px] max-w-md mx-auto leading-relaxed font-sans pt-1">
+              As a Sentinel Member, you have full access to search scammers, file fraud dispute reports, and track victim asset recoveries.
             </p>
           </div>
 
-          {/* Registered Details Summary Card */}
-          <div className="p-5 bg-white/[0.02] border border-white/10 rounded-xl text-left font-mono text-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
-              <span className="text-text-muted flex items-center gap-1.5 font-sans">
-                <Building2 className="w-3.5 h-3.5 text-accent-cyan" />
-                Store Name:
-              </span>
-              <span className="text-white font-bold">{storeApp?.store_name}</span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
-              <span className="text-text-muted flex items-center gap-1.5 font-sans">
-                <MapPin className="w-3.5 h-3.5 text-accent-amber" />
-                Operating State:
-              </span>
-              <span className="text-accent-amber font-bold">{currentState} ({currentRegion})</span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
-              <span className="text-text-muted flex items-center gap-1.5 font-sans">
-                <UserCheck className="w-3.5 h-3.5 text-accent-green" />
-                Primary Network:
-              </span>
-              <span className="text-accent-cyan font-bold capitalize">
-                {storeApp?.primary_platform === 'whatsapp_only' ? 'WhatsApp Only' :
-                 storeApp?.primary_platform === 'telegram_only' ? 'Telegram Only' :
-                 storeApp?.primary_platform === 'whatsapp_primary' ? 'WhatsApp & Telegram (WA Primary)' :
-                 storeApp?.primary_platform === 'telegram_primary' ? 'WhatsApp & Telegram (TG Primary)' :
-                 storeApp?.primary_platform === 'both' ? 'WhatsApp & Telegram (Equal)' :
-                 'WhatsApp & Telegram'}
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-2.5 gap-2">
-              <span className="text-text-muted flex items-center gap-1.5 font-sans whitespace-nowrap">
-                <MessageSquare className="w-3.5 h-3.5 text-accent-cyan" />
-                Contact Channels:
-              </span>
-              <div className="flex items-center justify-start sm:justify-end gap-2 flex-wrap">
-                {storeApp?.whatsapp_number && (
-                  <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-md text-emerald-400">
-                    <Phone className="w-3 h-3" />
-                    <span className="font-sans text-[11px] font-medium tracking-wide">{storeApp.whatsapp_number}</span>
-                  </div>
-                )}
-                {storeApp?.telegram_username && (
-                  <div className="flex items-center gap-1.5 bg-sky-500/10 border border-sky-500/20 px-2 py-1 rounded-md text-sky-400">
-                    <Send className="w-3 h-3" />
-                    <span className="font-sans text-[11px] font-medium tracking-wide">@{storeApp.telegram_username}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-text-muted font-sans">Submission Date:</span>
-              <span className="text-text-muted">
-                {storeApp?.created_at ? new Date(storeApp.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent'}
-              </span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={handleRefreshStatus}
-              disabled={refreshing}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-accent-cyan/15 hover:bg-accent-cyan/25 border border-accent-cyan/40 text-accent-cyan font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-              <span>Check Verification Status</span>
-            </button>
-
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Edit Store Details</span>
-            </button>
-
-            <button
-              onClick={() => signOut()}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-accent-red/10 hover:bg-accent-red/20 border border-accent-red/30 text-accent-red font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
-            </button>
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/submit-report" className="btn btn-red py-2.5 px-5 text-xs inline-flex items-center gap-2 font-mono">
+              <FileText className="w-4 h-4" />
+              <span>Report a Scammer</span>
+            </Link>
+            <Link href="/search" className="btn btn-outline py-2.5 px-5 text-xs inline-flex items-center gap-2 font-mono">
+              <Search className="w-4 h-4 text-accent-cyan" />
+              <span>Search Database</span>
+            </Link>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
+    return <>{children}</>;
   }
 
-  // 6. Approved Store -> Full Access
-  return <>{children}</>;
+  // 6. Member / Default Role (General authenticated user)
+  return (
+    <>
+      {showOnboard && (
+        <UnifiedOnboardingModal
+          onComplete={() => {
+            setShowOnboard(false);
+          }}
+        />
+      )}
+      {children}
+    </>
+  );
 }

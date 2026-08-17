@@ -13,12 +13,18 @@ import { getFirebaseAuth } from './config';
 import { db } from '../db';
 import { Profile } from '../../types';
 
+import { isSentinel, isRegionalAdmin, isVerifiedReseller, isMember, canViewVerifiedResellers } from '../permissions';
+
 interface AuthContextValue {
   user: User | null;
   profile: Profile | null;
+  isSentinel: boolean;
   isSuperAdmin: boolean;
   isRegionalAdmin: boolean;
+  isVerifiedReseller: boolean;
   isReseller: boolean;
+  isMember: boolean;
+  canViewResellers: boolean;
   loading: boolean;
   isAuthenticating: boolean;
   signInWithGoogle: () => Promise<void>;
@@ -32,9 +38,13 @@ const SUPER_ADMIN_EMAIL = '8xsentinel@gmail.com';
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   profile: null,
+  isSentinel: false,
   isSuperAdmin: false,
   isRegionalAdmin: false,
+  isVerifiedReseller: false,
   isReseller: false,
+  isMember: true,
+  canViewResellers: false,
   loading: true,
   isAuthenticating: false,
   signInWithGoogle: async () => {},
@@ -54,18 +64,11 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
   const isAuthenticatingRef = useRef<boolean>(false);
 
-  const isSuperAdmin = Boolean(
-    (user?.email && user.email.toLowerCase().trim() === SUPER_ADMIN_EMAIL) ||
-    profile?.role === 'super_admin'
-  );
-
-  const isRegionalAdmin = Boolean(
-    profile?.role === 'regional_admin' || profile?.roles?.includes('regional_admin')
-  );
-
-  const isReseller = Boolean(
-    profile?.role === 'verified_reseller' || profile?.store_status === 'approved'
-  );
+  const sentinel = isSentinel(profile, user?.email);
+  const regionalAdmin = isRegionalAdmin(profile);
+  const verifiedReseller = isVerifiedReseller(profile);
+  const member = !sentinel && !regionalAdmin && !verifiedReseller;
+  const canView = canViewVerifiedResellers(profile, user?.email);
 
   const refreshProfile = useCallback(async (): Promise<Profile | null> => {
     if (user && user.email) {
@@ -206,9 +209,13 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
     <AuthContext.Provider value={{
       user,
       profile,
-      isSuperAdmin,
-      isRegionalAdmin,
-      isReseller,
+      isSentinel: sentinel,
+      isSuperAdmin: sentinel,
+      isRegionalAdmin: regionalAdmin,
+      isVerifiedReseller: verifiedReseller,
+      isReseller: verifiedReseller,
+      isMember: member,
+      canViewResellers: canView,
       loading,
       isAuthenticating,
       signInWithGoogle,

@@ -27,7 +27,8 @@ import {
   Flame,
   Gauge,
   CheckCircle2,
-  ChevronDown
+  ChevronDown,
+  ArrowLeft
 } from 'lucide-react';
 
 const WhatsAppLogo = (props: React.ComponentProps<'svg'>) => (
@@ -55,17 +56,17 @@ const InstagramIcon = (props: React.ComponentProps<'svg'>) => (
     {...props}
   >
     <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
     <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
   </svg>
 );
 
 interface StoreOnboardingModalProps {
   onComplete: () => void;
+  onBack?: () => void;
   initialData?: any;
 }
 
-export default function StoreOnboardingModal({ onComplete, initialData }: StoreOnboardingModalProps) {
+export default function StoreOnboardingModal({ onComplete, onBack, initialData }: StoreOnboardingModalProps) {
   const { user, profile, signOut } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
@@ -216,13 +217,25 @@ export default function StoreOnboardingModal({ onComplete, initialData }: StoreO
               </p>
             </div>
 
-            <button
-              onClick={() => initialData ? onComplete() : signOut()}
-              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-accent-red font-mono px-3 py-1.5 rounded-lg border border-white/5 hover:border-accent-red/30 transition-all cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>{initialData ? 'Cancel Edit' : 'Sign Out'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {onBack && (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="flex items-center gap-1.5 text-xs text-text-muted hover:text-white font-mono px-3 py-1.5 rounded-lg border border-white/5 hover:border-white/20 transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back</span>
+                </button>
+              )}
+              <button
+                onClick={() => initialData ? onComplete() : signOut()}
+                className="flex items-center gap-1.5 text-xs text-text-muted hover:text-accent-red font-mono px-3 py-1.5 rounded-lg border border-white/5 hover:border-accent-red/30 transition-all cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>{initialData ? 'Cancel Edit' : 'Sign Out'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Tier Protocol Banner */}

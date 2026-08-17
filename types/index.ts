@@ -1,4 +1,12 @@
-export type UserRole = 'user' | 'verified_reseller' | 'regional_admin' | 'admin' | 'super_admin' | 'moderator' | 'seller';
+export type UserRole = 
+  | 'sentinel'
+  | 'regional_admin'
+  | 'verified_reseller'
+  | 'member'
+  | 'super_admin'
+  | 'admin'
+  | 'user';
+
 export type ScamReportStatus = 'pending' | 'approved' | 'rejected' | 'flagged' | 'withdrawn' | 'disputed';
 export type ScamType =
   | 'bank_account_freeze'
@@ -30,6 +38,8 @@ export interface Profile {
   displayName?: string | null;
   avatar_url: string | null;
   avatarUrl?: string | null;
+  phone_number?: string | null;
+  phoneNumber?: string | null;
   role: UserRole;
   roles?: UserRole[];
   primary_email?: string | null;

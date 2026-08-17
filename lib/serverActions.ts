@@ -4,6 +4,7 @@ import { db } from '../drizzle/index';
 import { profiles, scammerEntities, scamReports, trustedResellers, resellerReviews, resellerVotes, escrowPartnerships } from '../drizzle/schema';
 import { eq, or, and, ilike, desc, count, sql } from 'drizzle-orm';
 import { ScamReport, TrustedReseller } from '../types';
+import { isSentinel, isRegionalAdmin, isVerifiedReseller, canViewVerifiedResellers, canApproveResellerInRegion } from './permissions';
 
 // --- PROFILES ---
 export async function syncFirebaseUser(email: string, displayName?: string, photoURL?: string) {
@@ -20,8 +21,8 @@ export async function syncFirebaseUser(email: string, displayName?: string, phot
       const updateData: any = { lastSeen: new Date() };
       if (photoURL && !prof.avatarUrl) updateData.avatarUrl = photoURL;
       if (displayName && !prof.displayName) updateData.displayName = displayName;
-      if (isSuperAdminEmail && prof.role !== 'super_admin') {
-        updateData.role = 'super_admin';
+      if (isSuperAdminEmail && prof.role !== 'sentinel' && prof.role !== 'super_admin') {
+        updateData.role = 'sentinel';
         updateData.storeStatus = 'approved';
       }
       
@@ -29,13 +30,13 @@ export async function syncFirebaseUser(email: string, displayName?: string, phot
       return { ...prof, ...updateData };
     }
 
-    // Create new profile
+    // Create new profile - defaults to Sentinel Member
     const newProfile = {
       id: `user-${Date.now()}`,
       username,
-      displayName: displayName || username || (isSuperAdminEmail ? 'Root Admin' : 'Candidate'),
+      displayName: displayName || username || (isSuperAdminEmail ? 'Root Admin' : 'Sentinel Member'),
       avatarUrl: photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
-      role: isSuperAdminEmail ? 'super_admin' : 'user',
+      role: isSuperAdminEmail ? 'sentinel' : 'member',
       primaryEmail: cleanEmail,
       storeStatus: isSuperAdminEmail ? 'approved' : 'not_registered',
     };
@@ -48,6 +49,25 @@ export async function syncFirebaseUser(email: string, displayName?: string, phot
   }
 }
 
+export async function updateMemberContact(profileId: string, displayName?: string, phoneNumber?: string) {
+  try {
+    const cleanName = sanitizeString(displayName);
+    const cleanPhone = sanitizeString(phoneNumber);
+    const updateData: any = {};
+    if (cleanName) updateData.displayName = cleanName;
+    if (cleanPhone) updateData.whatsappUsername = cleanPhone;
+
+    if (Object.keys(updateData).length > 0) {
+      await db.update(profiles).set(updateData).where(eq(profiles.id, profileId));
+    }
+    const updated = await db.select().from(profiles).where(eq(profiles.id, profileId)).limit(1);
+    return updated.length > 0 ? updated[0] : null;
+  } catch (error) {
+    console.error("Error in updateMemberContact:", error);
+    throw error;
+  }
+}
+
 export async function registerUser(username: string, displayName: string) {
   try {
     const newProfile = {
@@ -55,7 +75,7 @@ export async function registerUser(username: string, displayName: string) {
       username: username.toLowerCase().trim(),
       displayName,
       avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
-      role: 'user',
+      role: 'member',
     };
     await db.insert(profiles).values(newProfile);
     return newProfile;
@@ -322,8 +342,16 @@ export async function getUserReports(userId: string) {
 }
 
 // --- RESELLERS ---
-export async function getResellers() {
+export async function getResellers(callerProfileId?: string) {
   try {
+    if (callerProfileId) {
+      const caller = await db.select().from(profiles).where(eq(profiles.id, callerProfileId)).limit(1);
+      if (caller.length > 0 && !canViewVerifiedResellers(caller[0] as any, caller[0].primaryEmail)) {
+        console.warn(`Unauthorized reseller directory access attempted by member: ${callerProfileId}`);
+        return [];
+      }
+    }
+
     const results = await db.select({
       reseller: trustedResellers,
       profile: profiles
@@ -382,12 +410,20 @@ export async function getPlatformStats() {
   }
 }
 
-export async function getResellerByUsername(username: string) {
-  return await getResellerProfile(username);
+export async function getResellerByUsername(username: string, callerProfileId?: string) {
+  return await getResellerProfile(username, callerProfileId);
 }
 
-export async function getResellerProfile(identifier: string) {
+export async function getResellerProfile(identifier: string, callerProfileId?: string) {
   try {
+    if (callerProfileId) {
+      const caller = await db.select().from(profiles).where(eq(profiles.id, callerProfileId)).limit(1);
+      if (caller.length > 0 && !canViewVerifiedResellers(caller[0] as any, caller[0].primaryEmail)) {
+        console.warn(`Unauthorized reseller profile access attempted by member: ${callerProfileId}`);
+        return null;
+      }
+    }
+
     const clean = decodeURIComponent(identifier).trim().replace('@', '');
     
     // Find reseller by id, username, telegram username, or store name

@@ -95,17 +95,21 @@ export const db = {
     return convertKeysToSnakeCase(await serverActions.getScammerEntity(entityId));
   },
 
+  updateMemberContact: async (profileId: string, displayName?: string, phoneNumber?: string): Promise<Profile | null> => {
+    return convertKeysToSnakeCase(await serverActions.updateMemberContact(profileId, displayName, phoneNumber)) as any;
+  },
+
   // Resellers
-  getResellers: async (): Promise<TrustedReseller[]> => {
-    return convertKeysToSnakeCase(await serverActions.getResellers()) as any;
+  getResellers: async (callerProfileId?: string): Promise<TrustedReseller[]> => {
+    return convertKeysToSnakeCase(await serverActions.getResellers(callerProfileId)) as any;
   },
 
-  getResellerByUsername: async (username: string) => {
-    return convertKeysToSnakeCase(await serverActions.getResellerByUsername(username));
+  getResellerByUsername: async (username: string, callerProfileId?: string) => {
+    return convertKeysToSnakeCase(await serverActions.getResellerByUsername(username, callerProfileId));
   },
 
-  getResellerProfile: async (identifier: string) => {
-    return convertKeysToSnakeCase(await serverActions.getResellerProfile(identifier));
+  getResellerProfile: async (identifier: string, callerProfileId?: string) => {
+    return convertKeysToSnakeCase(await serverActions.getResellerProfile(identifier, callerProfileId));
   },
 
   voteResellerTrust: async (resellerId: string, voterProfileId: string) => {
