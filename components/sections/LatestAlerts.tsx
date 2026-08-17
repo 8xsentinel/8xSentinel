@@ -5,22 +5,27 @@ import Link from 'next/link';
 import { db } from '../../lib/db';
 import { ScamReport } from '../../types';
 import RiskBadge from '../ui/RiskBadge';
-import { AlertCircle, Calendar, IndianRupee, ArrowRight } from 'lucide-react';
+import { AlertCircle, Calendar, IndianRupee, ArrowRight, Lock } from 'lucide-react';
+import { useAuth } from '../../lib/firebase/AuthContext';
+import AuthButton from '../auth/AuthButton';
 
 export default function LatestAlerts() {
+  const { user } = useAuth();
   const [alerts, setAlerts] = useState<ScamReport[]>([]);
 
   useEffect(() => {
     let isMounted = true;
-    db.getLatestApprovedReports(5).then((data) => {
-      if (isMounted) {
-        setAlerts(data);
-      }
-    });
+    if (user) {
+      db.getLatestApprovedReports(5).then((data) => {
+        if (isMounted) {
+          setAlerts(data);
+        }
+      });
+    }
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user]);
 
   return (
     <section className="py-20 px-4 max-w-4xl mx-auto space-y-8 border-b border-white/5 font-sans">
@@ -42,7 +47,24 @@ export default function LatestAlerts() {
         </div>
       </div>
 
-      {alerts.length === 0 ? (
+      {!user ? (
+        <div className="glass-panel card-glow-red rounded-3xl p-8 sm:p-12 text-center space-y-5 border border-accent-red/25 shadow-[0_0_50px_rgba(239,68,68,0.08)]">
+          <div className="w-16 h-16 rounded-2xl bg-accent-red/10 border border-accent-red/30 flex items-center justify-center mx-auto text-accent-red shadow-[0_0_25px_rgba(239,68,68,0.2)]">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2 max-w-md mx-auto">
+            <h3 className="text-xl font-bold text-white uppercase tracking-wider" style={{ fontFamily: 'var(--font-h)' }}>
+              Threat Intelligence Gated
+            </h3>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Live scam alerts, target UPI/WhatsApp handles, and evidence proof files require verified Google authentication to prevent automated scammer evasion.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center">
+            <AuthButton />
+          </div>
+        </div>
+      ) : alerts.length === 0 ? (
         <div className="glass-panel rounded-2xl p-12 text-center text-text-muted text-xs uppercase tracking-widest font-bold" style={{ fontFamily: 'var(--font-h)' }}>
           No threat alerts currently registered.
         </div>

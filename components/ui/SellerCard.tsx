@@ -11,9 +11,10 @@ interface SellerCardProps {
 }
 
 export default function SellerCard({ reseller }: SellerCardProps) {
-  const profileUsername = reseller.profile?.username || reseller.profile?.displayName || reseller.id;
+  const [imgError, setImgError] = React.useState(false);
+  const profileUsername = reseller.profile?.username || reseller.profile?.id || reseller.store_name || reseller.id;
   const isTier2 = reseller.tier2_status === 'approved' || reseller.tier === 2;
-  const avatar = reseller.profile?.avatar_url || reseller.profile?.avatarUrl;
+  const avatar = !imgError ? (reseller.profile?.avatar_url || reseller.profile?.avatarUrl) : null;
   const state = reseller.state || reseller.region || 'India';
   const trustScore = reseller.trust_score ?? 30;
 
@@ -32,7 +33,10 @@ export default function SellerCard({ reseller }: SellerCardProps) {
                 <img
                   src={avatar}
                   alt={reseller.store_name}
-                  className={`w-10 h-10 rounded-xl border object-cover shrink-0 ${isTier2 ? 'border-accent-amber' : 'border-accent-cyan/50'}`}
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  onError={() => setImgError(true)}
+                  className={`w-10 h-10 rounded-xl border object-cover shrink-0 ${isTier2 ? 'border-accent-amber shadow-[0_0_12px_rgba(245,158,11,0.2)]' : 'border-accent-cyan/50 shadow-[0_0_12px_rgba(6,182,212,0.2)]'}`}
                 />
               ) : (
                 <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center font-bold text-accent-cyan font-mono text-sm shrink-0">
@@ -101,7 +105,7 @@ export default function SellerCard({ reseller }: SellerCardProps) {
           </div>
 
           <span className="text-[11px] text-accent-cyan group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-            <span>View Dossier</span>
+            <span>View Profile</span>
             <ArrowUpRight className="w-3 h-3" />
           </span>
         </div>

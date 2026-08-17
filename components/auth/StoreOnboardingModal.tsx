@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { INDIAN_STATES } from '../../lib/constants/indiaStates';
 import { COUNTRY_CODES, OPERATING_YEARS, PrimaryPlatform } from '../../lib/constants/countryCodes';
 import { db } from '../../lib/db';
@@ -13,7 +13,6 @@ import {
   Send, 
   ShieldCheck, 
   Sparkles, 
-  Clock, 
   Check, 
   LogOut, 
   Calendar, 
@@ -27,9 +26,17 @@ import {
   Flame,
   Gauge,
   CheckCircle2,
+  AlertCircle,
   ChevronDown,
-  ArrowLeft
+  ArrowLeft,
+  ExternalLink,
+  Info
 } from 'lucide-react';
+import { 
+  validateWhatsAppLink, 
+  validateTelegramLink, 
+  validatePhoneNumber 
+} from '../../lib/validators/linkValidators';
 
 const WhatsAppLogo = (props: React.ComponentProps<'svg'>) => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" {...props}>
@@ -75,6 +82,7 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
   const parsedNumber = rawWaNumber.startsWith('+') ? rawWaNumber.split(' ').slice(1).join(' ') : rawWaNumber;
 
   // Form states
+  const [ownerName, setOwnerName] = useState(initialData?.ownerName || initialData?.owner_name || profile?.displayName || profile?.display_name || user?.displayName || '');
   const [storeName, setStoreName] = useState(initialData?.storeName || initialData?.store_name || '');
   const [selectedState, setSelectedState] = useState(initialData?.state || initialData?.region || profile?.state || profile?.region || 'Delhi (NCT)');
   const [primaryPlatform, setPrimaryPlatform] = useState<PrimaryPlatform>(initialData?.primaryPlatform || initialData?.primary_platform || 'whatsapp_primary');
@@ -82,6 +90,11 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
   
   // WhatsApp specific states
   const [whatsappNumber, setWhatsappNumber] = useState(parsedNumber || '');
+  const rawBackupWa = initialData?.backupWhatsappNumber || initialData?.backup_whatsapp_number || '';
+  const parsedBackupCode = rawBackupWa.startsWith('+') ? rawBackupWa.split(' ')[0] : (initialData?.backupCountryCode || '+91');
+  const parsedBackupNumber = rawBackupWa.startsWith('+') ? rawBackupWa.split(' ').slice(1).join(' ') : rawBackupWa;
+  const [backupCountryCode, setBackupCountryCode] = useState(parsedBackupCode || '+91');
+  const [backupWhatsappNumber, setBackupWhatsappNumber] = useState(parsedBackupNumber || '');
   const [whatsappUsername, setWhatsappUsername] = useState((initialData?.whatsappUsername || initialData?.whatsapp_username || '').replace('@', ''));
   const [whatsappGroupLink, setWhatsappGroupLink] = useState(initialData?.whatsappGroupLink || initialData?.whatsapp_group_link || '');
 
@@ -114,11 +127,68 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
   const isWhatsappActive = primaryPlatform !== 'telegram_only';
   const isTelegramActive = primaryPlatform !== 'whatsapp_only';
 
+  // Real-time link validation evaluations
+  const waLinkValidation = useMemo(() => {
+    return validateWhatsAppLink(whatsappGroupLink);
+  }, [whatsappGroupLink]);
+
+  const tgLinkValidation = useMemo(() => {
+    return validateTelegramLink(telegramChannelLink);
+  }, [telegramChannelLink]);
+
+  const waPhoneValidation = useMemo(() => {
+    return validatePhoneNumber(whatsappNumber, countryCode);
+  }, [whatsappNumber, countryCode]);
+
+  const backupPhoneValidation = useMemo(() => {
+    if (!backupWhatsappNumber.trim()) return null;
+    return validatePhoneNumber(backupWhatsappNumber, backupCountryCode);
+  }, [backupWhatsappNumber, backupCountryCode]);
+
+  // Smart phone paste handler
+  const handlePhoneInput = (val: string, setCode: (c: string) => void, setNum: (n: string) => void) => {
+    const clean = val.trim();
+    if (clean.startsWith('+')) {
+      const match = clean.match(/^(\+\d{1,4})[\s-]?(\d{6,14})$/);
+      if (match) {
+        setCode(match[1]);
+        setNum(match[2]);
+        return;
+      }
+    }
+    setNum(val.replace(/[^0-9\s-]/g, ''));
+  };
+
+  // Smart Telegram channel auto-format
+  const handleTelegramLinkChange = (val: string) => {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('@') && trimmed.length > 1) {
+      setTelegramChannelLink(`https://t.me/${trimmed.substring(1)}`);
+    } else {
+      setTelegramChannelLink(val);
+    }
+  };
+
+  // Smart WhatsApp link auto-format
+  const handleWhatsAppLinkChange = (val: string) => {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('chat.whatsapp.com/') || trimmed.startsWith('whatsapp.com/channel/')) {
+      setWhatsappGroupLink(`https://${trimmed}`);
+    } else {
+      setWhatsappGroupLink(val);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!ownerName.trim()) {
+      toast.error('Valid Full Name of Seller is required');
+      return;
+    }
+
     if (!storeName.trim()) {
-      toast.error('Store Name is required');
+      toast.error('Store / Trade Name is required');
       return;
     }
     if (!selectedState) {
@@ -132,10 +202,28 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
         toast.error('Official WhatsApp Number is required');
         return;
       }
+      if (!waPhoneValidation.isValid) {
+        toast.error(waPhoneValidation.message);
+        return;
+      }
       if (primaryPlatform === 'whatsapp_only' && !whatsappUsername.trim()) {
         toast.error('WhatsApp Username / Profile Name is required');
         return;
       }
+      if (!whatsappGroupLink.trim()) {
+        toast.error('Official WhatsApp Group or Channel invite link is required');
+        return;
+      }
+      if (!waLinkValidation.isValid) {
+        toast.error(`Invalid WhatsApp Link: ${waLinkValidation.message}`);
+        return;
+      }
+    }
+
+    // Validation for Backup WhatsApp (if provided)
+    if (backupWhatsappNumber.trim() && backupPhoneValidation && !backupPhoneValidation.isValid) {
+      toast.error(`Backup Phone: ${backupPhoneValidation.message}`);
+      return;
     }
 
     // Validation for Telegram
@@ -148,9 +236,18 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
         toast.error('Contact Phone Number is required for merchant clearance');
         return;
       }
+      if (!telegramChannelLink.trim()) {
+        toast.error('Official Telegram Store link is required');
+        return;
+      }
+      if (!tgLinkValidation.isValid) {
+        toast.error(`Invalid Telegram Link: ${tgLinkValidation.message}`);
+        return;
+      }
     }
 
     const formattedWhatsapp = whatsappNumber.trim() ? `${countryCode} ${whatsappNumber.trim()}` : undefined;
+    const formattedBackupWhatsapp = backupWhatsappNumber.trim() ? `${backupCountryCode} ${backupWhatsappNumber.trim()}` : undefined;
     const currentYear = new Date().getFullYear();
     const calculatedYearsActive = Math.max(1, currentYear - operatingSince);
 
@@ -160,14 +257,16 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
       const res = await db.applyForReseller({
         profile_id: targetProfileId,
         store_name: storeName.trim(),
+        owner_name: ownerName.trim() || undefined,
         state: selectedState,
         country_code: countryCode,
         primary_platform: primaryPlatform,
         whatsapp_number: formattedWhatsapp,
+        backup_whatsapp_number: formattedBackupWhatsapp,
         whatsapp_username: whatsappUsername.trim().replace('@', '') || undefined,
-        whatsapp_group_link: whatsappGroupLink.trim() || undefined,
+        whatsapp_group_link: waLinkValidation.isValid ? waLinkValidation.normalizedUrl : (whatsappGroupLink.trim() || undefined),
         telegram_username: telegramHandle.trim().replace('@', '') || undefined,
-        telegram_channel_link: telegramChannelLink.trim() || undefined,
+        telegram_channel_link: tgLinkValidation.isValid ? tgLinkValidation.normalizedUrl : (telegramChannelLink.trim() || undefined),
         operating_since_year: Number(operatingSince),
         instagram_username: instagram.trim().replace('@', '') || undefined,
         years_active: calculatedYearsActive,
@@ -206,14 +305,14 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                   Verification Gateway
                 </span>
                 <span className="text-[11px] font-mono text-text-muted">
-                  Tier 1 / Clearance
+                  Tier 1 Clearance
                 </span>
               </div>
               <h2 className="text-xl md:text-2xl font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-h)' }}>
                 Reseller Onboarding
               </h2>
               <p className="text-xs text-text-secondary">
-                Configure your store parameters to obtain Sentinel Verified status.
+                Configure your store parameters with automated channel &amp; link verification.
               </p>
             </div>
 
@@ -252,8 +351,27 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
         {/* Onboarding Form */}
         <form onSubmit={handleSubmit} className="p-6 md:p-7 space-y-6">
           
-          {/* Section 1: Store Name & Indian State */}
+          {/* Section 1: Seller Identity & Store Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Seller Full Legal Name */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between font-mono">
+                <span className="flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-accent-cyan" />
+                  <span>Valid Full Name of Seller *</span>
+                </span>
+                <span className="text-[10px] text-accent-cyan/70 font-normal">Official / Govt ID</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                placeholder="e.g. Matheswaran S"
+                className="w-full bg-white/[0.03] border border-white/10 focus:border-accent-cyan/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-medium"
+              />
+            </div>
+
             {/* Store Name */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-1.5 font-mono">
@@ -266,12 +384,12 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
                 placeholder="e.g. Apex BGMI Vault"
-                className="w-full bg-white/[0.03] border border-white/10 focus:border-accent-cyan/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
+                className="w-full bg-white/[0.03] border border-white/10 focus:border-accent-cyan/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-medium"
               />
             </div>
 
             {/* Indian State Selection */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-1.5 font-mono">
                 <MapPin className="w-3.5 h-3.5 text-accent-cyan" />
                 <span>Operating State (India) *</span>
@@ -373,7 +491,7 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                   )}
                 </div>
                 <p className="text-[11px] text-text-muted mt-2 leading-tight">
-                  Exclusive operation via WhatsApp chats & groups
+                  Exclusive operation via WhatsApp chats &amp; groups
                 </p>
               </button>
 
@@ -397,7 +515,7 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                   )}
                 </div>
                 <p className="text-[11px] text-text-muted mt-2 leading-tight">
-                  Exclusive operation via Telegram channels & DMs
+                  Exclusive operation via Telegram channels &amp; DMs
                 </p>
               </button>
 
@@ -418,7 +536,7 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                   <div className="flex items-center gap-1.5">
                     <span className="text-emerald-400"><WhatsAppLogo /></span>
                     <span className="text-sky-400"><TelegramLogo /></span>
-                    <span className="text-[10px] sm:text-xs font-bold font-mono tracking-wide text-white truncate">WhatsApp & Telegram</span>
+                    <span className="text-[10px] sm:text-xs font-bold font-mono tracking-wide text-white truncate">WhatsApp &amp; Telegram</span>
                   </div>
                   {(primaryPlatform === 'both' || primaryPlatform === 'whatsapp_primary' || primaryPlatform === 'telegram_primary') && (
                     <CheckCircle2 className="w-3.5 h-3.5 text-accent-amber" />
@@ -432,7 +550,7 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
 
             {(primaryPlatform === 'both' || primaryPlatform === 'whatsapp_primary' || primaryPlatform === 'telegram_primary') && (
               <div className="p-3.5 rounded-xl border border-accent-amber/30 bg-accent-amber/[0.03] space-y-2 mt-2 animate-in fade-in zoom-in-95 duration-200">
-                <p className="text-[10px] uppercase font-bold text-accent-amber mb-2 tracking-wider flex items-center justify-between">
+                <p className="text-[10px] uppercase font-bold text-accent-amber mb-2 tracking-wider flex items-center justify-between font-mono">
                   <span>Select Primary Network (Most Active)</span>
                   <span className="text-[9px] text-accent-amber/60">Required</span>
                 </p>
@@ -489,6 +607,11 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between font-mono">
                     <span>Official WhatsApp Number *</span>
+                    {whatsappNumber && (
+                      <span className={`text-[10px] font-mono ${waPhoneValidation.isValid ? 'text-emerald-400' : 'text-accent-red'}`}>
+                        {waPhoneValidation.cleanDigits.length}/10 digits
+                      </span>
+                    )}
                   </label>
                   <div className="flex gap-2">
                     <div className="w-[105px] shrink-0">
@@ -508,9 +631,11 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                       type="text"
                       required
                       value={whatsappNumber}
-                      onChange={(e) => setWhatsappNumber(e.target.value.replace(/[^0-9\s-]/g, ''))}
+                      onChange={(e) => handlePhoneInput(e.target.value, setCountryCode, setWhatsappNumber)}
                       placeholder="9025391516"
-                      className="flex-1 min-w-0 bg-white/[0.03] border border-white/10 focus:border-emerald-500/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-mono"
+                      className={`flex-1 min-w-0 bg-white/[0.03] border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-mono ${
+                        whatsappNumber && !waPhoneValidation.isValid ? 'border-accent-red/50 focus:border-accent-red' : 'border-white/10 focus:border-emerald-500/60'
+                      }`}
                     />
                   </div>
                 </div>
@@ -533,25 +658,103 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                     />
                   </div>
                 </div>
+
+                {/* Backup WhatsApp Number (Optional) */}
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between font-mono">
+                    <span className="flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-emerald-400/80" />
+                      <span>Backup WhatsApp Line (Optional)</span>
+                    </span>
+                    <span className="text-[10px] text-text-muted font-normal">Secondary failover contact</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="w-[105px] shrink-0">
+                      <select
+                        value={backupCountryCode}
+                        onChange={(e) => setBackupCountryCode(e.target.value)}
+                        className="w-full bg-[#0d121f] border border-white/10 focus:border-emerald-500/60 rounded-xl px-2.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer font-mono"
+                      >
+                        {COUNTRY_CODES.map((c) => (
+                          <option key={`backup-${c.code}-${c.dial_code}`} value={c.dial_code} className="bg-[#0d121f] text-white">
+                            {c.flag} {c.dial_code}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <input
+                      type="text"
+                      value={backupWhatsappNumber}
+                      onChange={(e) => handlePhoneInput(e.target.value, setBackupCountryCode, setBackupWhatsappNumber)}
+                      placeholder="9876543210 (Optional backup number)"
+                      className="flex-1 min-w-0 bg-white/[0.03] border border-white/10 focus:border-emerald-500/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-mono"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* WhatsApp Official Store Link */}
-              <div className="space-y-1.5">
+              {/* WhatsApp Official Store Link with Auto-Verification */}
+              <div className="space-y-1.5 pt-1">
                 <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between font-mono">
                   <span className="flex items-center gap-1.5">
                     <Link2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Official Store on WhatsApp Group or Channel Link *</span>
+                    <span>Official WhatsApp Group / Channel Link *</span>
                   </span>
-                  <span className="text-[10px] text-text-muted">Public Group / Channel URL</span>
+                  <span className="text-[10px] text-text-muted">Auto-Checking Enabled</span>
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={whatsappGroupLink}
-                  onChange={(e) => setWhatsappGroupLink(e.target.value)}
-                  placeholder="https://chat.whatsapp.com/... or https://whatsapp.com/channel/..."
-                  className="w-full bg-white/[0.03] border border-white/10 focus:border-emerald-500/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-mono text-xs"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={whatsappGroupLink}
+                    onChange={(e) => handleWhatsAppLinkChange(e.target.value)}
+                    placeholder="https://chat.whatsapp.com/... or https://whatsapp.com/channel/..."
+                    className={`w-full bg-white/[0.03] border rounded-xl pl-3.5 pr-24 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none transition-all font-mono ${
+                      whatsappGroupLink && waLinkValidation.isValid 
+                        ? 'border-emerald-500/50 focus:border-emerald-400 bg-emerald-500/[0.02]' 
+                        : whatsappGroupLink && !waLinkValidation.isValid
+                        ? 'border-accent-red/50 focus:border-accent-red bg-accent-red/[0.02]'
+                        : 'border-white/10 focus:border-emerald-500/60'
+                    }`}
+                  />
+                  {/* Test Link Button */}
+                  {whatsappGroupLink && waLinkValidation.isValid && (
+                    <a
+                      href={waLinkValidation.normalizedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute right-2 top-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-[10px] font-mono text-emerald-400 flex items-center gap-1 transition-all"
+                    >
+                      <span>Test Link</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  )}
+                </div>
+
+                {/* Real-time Link Validation Status Card */}
+                {whatsappGroupLink && (
+                  <div className={`p-2.5 rounded-xl text-xs flex items-center justify-between gap-2 transition-all ${
+                    waLinkValidation.isValid 
+                      ? 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-300' 
+                      : 'bg-accent-red/10 border border-accent-red/25 text-accent-red'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {waLinkValidation.isValid ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 text-accent-red shrink-0" />
+                      )}
+                      <span className="font-mono text-[11px]">
+                        {waLinkValidation.isValid ? waLinkValidation.message : waLinkValidation.message}
+                      </span>
+                    </div>
+                    {waLinkValidation.isValid && (
+                      <span className="px-2 py-0.5 rounded text-[9px] font-mono uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                        {waLinkValidation.label}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -595,7 +798,7 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                         type="text"
                         required
                         value={whatsappNumber}
-                        onChange={(e) => setWhatsappNumber(e.target.value.replace(/[^0-9\s-]/g, ''))}
+                        onChange={(e) => handlePhoneInput(e.target.value, setCountryCode, setWhatsappNumber)}
                         placeholder="9025391516"
                         className="flex-1 min-w-0 bg-white/[0.03] border border-white/10 focus:border-sky-500/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-mono"
                       />
@@ -623,23 +826,68 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
                 </div>
               </div>
 
-              {/* Official Telegram Store Channel / Group */}
-              <div className="space-y-1.5">
+              {/* Official Telegram Store Channel / Group with Auto-Verification */}
+              <div className="space-y-1.5 pt-1">
                 <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between font-mono">
                   <span className="flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-sky-400" />
                     <span>Official Telegram Store Link *</span>
                   </span>
-                  <span className="text-[10px] text-text-muted">Public Channel / Group</span>
+                  <span className="text-[10px] text-text-muted">Auto-Checking Enabled</span>
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={telegramChannelLink}
-                  onChange={(e) => setTelegramChannelLink(e.target.value)}
-                  placeholder="https://t.me/store_official"
-                  className="w-full bg-white/[0.03] border border-white/10 focus:border-sky-500/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-mono text-xs"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={telegramChannelLink}
+                    onChange={(e) => handleTelegramLinkChange(e.target.value)}
+                    placeholder="https://t.me/store_official or @store_official"
+                    className={`w-full bg-white/[0.03] border rounded-xl pl-3.5 pr-24 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none transition-all font-mono ${
+                      telegramChannelLink && tgLinkValidation.isValid 
+                        ? 'border-sky-500/50 focus:border-sky-400 bg-sky-500/[0.02]' 
+                        : telegramChannelLink && !tgLinkValidation.isValid
+                        ? 'border-accent-red/50 focus:border-accent-red bg-accent-red/[0.02]'
+                        : 'border-white/10 focus:border-sky-500/60'
+                    }`}
+                  />
+                  {/* Test Link Button */}
+                  {telegramChannelLink && tgLinkValidation.isValid && (
+                    <a
+                      href={tgLinkValidation.normalizedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute right-2 top-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-[10px] font-mono text-sky-400 flex items-center gap-1 transition-all"
+                    >
+                      <span>Test Link</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  )}
+                </div>
+
+                {/* Real-time Link Validation Status Card */}
+                {telegramChannelLink && (
+                  <div className={`p-2.5 rounded-xl text-xs flex items-center justify-between gap-2 transition-all ${
+                    tgLinkValidation.isValid 
+                      ? 'bg-sky-500/10 border border-sky-500/25 text-sky-300' 
+                      : 'bg-accent-red/10 border border-accent-red/25 text-accent-red'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {tgLinkValidation.isValid ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 text-accent-red shrink-0" />
+                      )}
+                      <span className="font-mono text-[11px]">
+                        {tgLinkValidation.isValid ? tgLinkValidation.message : tgLinkValidation.message}
+                      </span>
+                    </div>
+                    {tgLinkValidation.isValid && (
+                      <span className="px-2 py-0.5 rounded text-[9px] font-mono uppercase bg-sky-500/20 text-sky-300 border border-sky-500/30 shrink-0">
+                        {tgLinkValidation.label}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -650,26 +898,25 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
               <span>Trading Specialization *</span>
               <span className="text-[10px] text-text-muted">Select all active categories</span>
             </label>
-            
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-              {specialtyOptions.map((opt) => {
-                const IconComponent = opt.icon;
-                const checked = specialties.includes(opt.id);
+              {specialtyOptions.map((spec) => {
+                const Icon = spec.icon;
+                const isSelected = specialties.includes(spec.id);
                 return (
                   <button
-                    key={opt.id}
+                    key={spec.id}
                     type="button"
-                    onClick={() => toggleSpecialty(opt.id)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer relative ${
-                      checked
-                        ? 'bg-accent-cyan/10 border-accent-cyan/60 text-white shadow-[0_0_15px_rgba(0,184,255,0.12)]'
-                        : 'bg-white/[0.02] border-white/10 text-gray-400 hover:text-white hover:bg-white/5'
+                    onClick={() => toggleSpecialty(spec.id)}
+                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 relative ${
+                      isSelected
+                        ? 'bg-white/[0.08] border-accent-cyan/60 shadow-[0_0_15px_rgba(0,184,255,0.1)]'
+                        : 'bg-white/[0.02] border-white/5 opacity-50 hover:opacity-100 hover:bg-white/[0.04]'
                     }`}
                   >
-                    <IconComponent className={`w-5 h-5 mb-1.5 ${checked ? opt.color : 'text-gray-500'}`} />
-                    <span className="text-xs font-medium tracking-tight font-mono">{opt.label}</span>
-                    {checked && (
-                      <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-accent-cyan animate-pulse" />
+                    <Icon className={`w-4 h-4 ${spec.color}`} />
+                    <span className="text-[11px] font-medium text-white">{spec.label.split(' ')[0]}</span>
+                    {isSelected && (
+                      <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-accent-cyan" />
                     )}
                   </button>
                 );
@@ -677,20 +924,31 @@ export default function StoreOnboardingModal({ onComplete, onBack, initialData }
             </div>
           </div>
 
-          {/* Submit Action */}
-          <div className="pt-3 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-[11px] text-text-muted font-mono">
-              <Clock className="w-3.5 h-3.5 text-accent-amber shrink-0" />
-              <span>Regional clearance turnaround: 2 - 24 hours</span>
-            </div>
-
+          {/* Form Actions */}
+          <div className="pt-3 border-t border-white/[0.08] flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={initialData ? onComplete : () => signOut()}
+              className="px-4 py-2.5 rounded-xl border border-white/10 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+            >
+              {initialData ? 'Cancel' : 'Abort'}
+            </button>
             <button
               type="submit"
               disabled={submitting}
-              className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-accent-cyan via-accent-blue to-accent-cyan hover:shadow-[0_0_30px_rgba(0,184,255,0.35)] text-bg-void font-bold text-xs uppercase tracking-wider transition-all duration-300 disabled:opacity-50 cursor-pointer"
-              style={{ fontFamily: 'var(--font-h)' }}
+              className="px-6 py-2.5 rounded-xl bg-accent-cyan hover:bg-accent-cyan/90 text-black text-xs font-bold font-mono uppercase tracking-wider transition-all disabled:opacity-50 shadow-[0_0_25px_rgba(0,184,255,0.3)] cursor-pointer flex items-center gap-2"
             >
-              {submitting ? 'Submitting Credentials...' : 'Submit For Sentinel Verification →'}
+              {submitting ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span>Verifying Credentials...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{initialData ? 'Update Store Profile' : 'Submit for Regional Clearance'}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

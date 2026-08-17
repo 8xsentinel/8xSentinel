@@ -119,23 +119,24 @@ export default function SearchBar({
       </div>
 
       {/* Input Box & Action Button */}
-      <div className="flex gap-2.5">
+      <div className="flex flex-col sm:flex-row gap-2.5">
         <div className="relative flex-1 group">
           <div className="relative flex items-center">
-            <Search className="absolute left-4 w-4 h-4 text-accent-cyan pointer-events-none" />
+            <Search className="absolute left-4 w-4 h-4 text-accent-cyan pointer-events-none z-10" />
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={activePlaceholder}
-              className="input-field pl-11 pr-10 py-3.5 text-sm"
+              className="w-full bg-[#080a0f]/95 border border-white/10 hover:border-white/20 focus:border-accent-cyan rounded-xl !pl-11 !pr-10 py-3.5 text-sm text-white placeholder:text-text-muted focus:outline-none transition-all shadow-inner"
             />
             {query && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="absolute right-3.5 text-text-muted hover:text-white transition-colors"
+                className="absolute right-3.5 text-text-muted hover:text-white transition-colors cursor-pointer p-1"
+                aria-label="Clear query"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -146,14 +147,14 @@ export default function SearchBar({
         <button
           type="submit"
           disabled={isLoading || !query.trim()}
-          className="btn btn-cyan px-7 py-3.5 text-xs tracking-wider flex items-center gap-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="btn btn-cyan px-7 py-3.5 text-xs font-bold tracking-wider flex items-center justify-center gap-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(6,182,212,0.25)]"
         >
           {isLoading ? (
             <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
             <Search className="w-4 h-4" />
           )}
-          <span className="hidden sm:inline">Search Registry</span>
+          <span className="font-mono">SEARCH REGISTRY</span>
         </button>
       </div>
     </form>

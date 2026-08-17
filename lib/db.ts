@@ -153,7 +153,23 @@ export const db = {
     return convertKeysToSnakeCase(await serverActions.moderateReseller(resellerId, status, rejectionReason)) as any;
   },
 
+  adminUpdateReseller: async (resellerId: string, updates: any): Promise<TrustedReseller | null> => {
+    return convertKeysToSnakeCase(await serverActions.adminUpdateReseller(resellerId, updates)) as any;
+  },
+
+  adjustResellerTrustScore: async (resellerId: string, delta: number): Promise<number | null> => {
+    return serverActions.adjustResellerTrustScore(resellerId, delta);
+  },
+
   getPlatformStats: async () => {
     return serverActions.getPlatformStats();
+  },
+
+  recordRegistryLookup: async () => {
+    return serverActions.recordRegistryLookup();
+  },
+
+  getRegistryLookups: async () => {
+    return serverActions.getRegistryLookups();
   }
 };

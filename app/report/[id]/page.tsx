@@ -14,7 +14,6 @@ import {
   IndianRupee, 
   Shield, 
   FileText, 
-  Vote, 
   CheckCircle2, 
   AlertOctagon, 
   Award, 
@@ -51,26 +50,6 @@ export default function ReportDetailPage() {
       });
     }
   }, [id]);
-
-  const handleVote = async (voteType: 'upvote' | 'verify') => {
-    if (!report) return;
-    const user = currentUser;
-    if (!user) {
-      toast.error('Authentication required.');
-      return;
-    }
-
-    const updated = await db.voteReport(report.id, voteType);
-    if (updated) {
-      const refresh = await db.getReport(report.id);
-      setReport(refresh);
-      toast.success(
-        voteType === 'upvote' 
-          ? 'Upvoted this warning record!' 
-          : 'Thank you for verifying this scam record.'
-      );
-    }
-  };
 
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -299,33 +278,7 @@ export default function ReportDetailPage() {
             )}
           </div>
 
-          {/* Verification actions */}
-          {isApproved && !isWithdrawn && (
-            <div className="backdrop-blur-md bg-white/[0.02] border border-border-subtle rounded-xl p-6 flex items-center justify-between gap-4">
-              <div className="font-mono text-xs text-text-secondary space-y-0.5">
-                <p className="font-bold text-text-primary uppercase flex items-center gap-1">
-                  <Vote className="w-4 h-4 text-accent-cyan" />
-                  <span>Registry Verification Feed</span>
-                </p>
-                <p className="text-text-muted text-[10px] font-sans">Help corroborate this record with peer reseller votes.</p>
-              </div>
 
-              <div className="flex gap-2.5">
-                <button
-                  onClick={() => handleVote('upvote')}
-                  className="bg-white/[0.03] border border-border-subtle hover:border-accent-cyan/30 text-text-secondary hover:text-accent-cyan px-3.5 py-2 rounded-xl text-xs font-bold uppercase transition-all duration-150 cursor-pointer font-mono"
-                >
-                  Upvote ({report.upvotes})
-                </button>
-                <button
-                  onClick={() => handleVote('verify')}
-                  className="bg-accent-cyan/15 border border-accent-cyan/30 hover:bg-accent-cyan hover:text-bg-void text-accent-cyan px-3.5 py-2 rounded-xl text-xs font-bold uppercase transition-all duration-150 cursor-pointer font-mono"
-                >
-                  Verify ({report.verified_by_count})
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Sidebar Panel */}

@@ -135,7 +135,7 @@ export default function ProtectedRoute({
               Verified Resellers Only
             </h2>
             <p className="text-text-secondary text-xs sm:text-[13px] max-w-md mx-auto leading-relaxed font-sans">
-              The Verified Resellers Network and merchant dossiers are exclusively accessible to Sentinel Verified Resellers and Administrators.
+              The Verified Resellers Network and merchant profiles are exclusively accessible to Sentinel Verified Resellers and Administrators.
             </p>
             <p className="text-text-muted text-[11px] max-w-md mx-auto leading-relaxed font-sans pt-1">
               As a Sentinel Member, you have full access to search scammers, file fraud dispute reports, and track victim asset recoveries.

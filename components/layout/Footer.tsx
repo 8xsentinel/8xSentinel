@@ -69,17 +69,21 @@ const socials = [
   },
 ];
 
+import { db } from "../../lib/db";
+
 export default function Footer() {
-  const [views, setViews] = useState<number>(14820);
+  const [views, setViews] = useState<number>(14878);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const cached = localStorage.getItem("8x_views");
-    if (cached) {
-      setViews(Number(cached) + 1);
-      localStorage.setItem("8x_views", String(Number(cached) + 1));
-    } else {
-      localStorage.setItem("8x_views", "14820");
-    }
+    setMounted(true);
+    db.getPlatformStats()
+      .then((stats) => {
+        if (stats?.lookups) {
+          setViews(stats.lookups);
+        }
+      })
+      .catch((err) => console.error("Error fetching stats in footer:", err));
   }, []);
 
   return (
@@ -350,35 +354,42 @@ export default function Footer() {
           style={{
             display: "flex",
             justifyContent: "center",
-            marginBottom: "16px",
+            marginBottom: "24px",
           }}
         >
-          <div
+          <Link
+            href="/search"
+            className="group hover:border-accent-cyan/60 hover:scale-[1.03] transition-all duration-300 cursor-pointer"
             style={{
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
-              background: "rgba(6, 182, 212, 0.04)",
-              border: "1px solid rgba(6, 182, 212, 0.2)",
+              background: "rgba(6, 182, 212, 0.05)",
+              border: "1px solid rgba(6, 182, 212, 0.25)",
               borderRadius: "20px",
-              padding: "6px 16px",
+              padding: "7px 18px",
               fontSize: "12px",
               color: "var(--color-cyan)",
               fontWeight: 600,
               letterSpacing: "0.5px",
-              boxShadow: "0 0 20px rgba(6, 182, 212, 0.05)",
-              backdropFilter: "blur(4px)",
-              transition: "transform 0.3s ease, border-color 0.3s ease",
+              boxShadow: "0 0 20px rgba(6, 182, 212, 0.08)",
+              backdropFilter: "blur(6px)",
             }}
           >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-cyan" />
+            </span>
             <Eye
-              size={13}
+              size={14}
               style={{
-                filter: "drop-shadow(0 0 2px rgba(6, 182, 212, 0.6))",
+                filter: "drop-shadow(0 0 3px rgba(6, 182, 212, 0.8))",
                 color: "#06b6d4",
               }}
             />
-            <span>TOTAL REGISTRY LOOKUPS:</span>
+            <span className="font-mono text-[11px] tracking-wider uppercase font-bold text-accent-cyan group-hover:text-white transition-colors">
+              TOTAL REGISTRY LOOKUPS:
+            </span>
             <span
               style={{
                 color: "#fff",
@@ -386,10 +397,11 @@ export default function Footer() {
                 fontWeight: 700,
                 letterSpacing: "1px",
               }}
+              className="text-xs font-mono font-bold"
             >
-              {views.toLocaleString()}
+              {mounted ? views.toLocaleString() : "14,878"}
             </span>
-          </div>
+          </Link>
         </div>
 
         <div

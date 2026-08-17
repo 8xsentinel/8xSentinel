@@ -52,6 +52,8 @@ export interface Profile {
   primaryPlatform?: 'whatsapp_primary' | 'telegram_primary' | 'whatsapp_only' | 'telegram_only' | 'both';
   country_code?: string | null;
   whatsapp_username?: string | null;
+  backup_whatsapp_number?: string | null;
+  backupWhatsappNumber?: string | null;
   whatsapp_group_link?: string | null;
   telegram_channel_link?: string | null;
   operating_since_year?: number | null;
@@ -127,6 +129,8 @@ export interface TrustedReseller {
   profileId?: string;
   store_name: string;
   storeName?: string;
+  owner_name?: string | null;
+  ownerName?: string | null;
   tagline?: string | null;
   bio?: string | null;
   telegram_username?: string | null;
@@ -135,6 +139,8 @@ export interface TrustedReseller {
   telegramChannelLink?: string | null;
   whatsapp_number?: string | null;
   whatsappNumber?: string | null;
+  backup_whatsapp_number?: string | null;
+  backupWhatsappNumber?: string | null;
   whatsapp_username?: string | null;
   whatsappUsername?: string | null;
   whatsapp_group_link?: string | null;

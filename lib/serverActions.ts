@@ -5,6 +5,7 @@ import { profiles, scammerEntities, scamReports, trustedResellers, resellerRevie
 import { eq, or, and, ilike, desc, count, sql } from 'drizzle-orm';
 import { ScamReport, TrustedReseller } from '../types';
 import { isSentinel, isRegionalAdmin, isVerifiedReseller, canViewVerifiedResellers, canApproveResellerInRegion } from './permissions';
+import { validateWhatsAppLink, validateTelegramLink } from './validators/linkValidators';
 
 // --- PROFILES ---
 export async function syncFirebaseUser(email: string, displayName?: string, photoURL?: string) {
@@ -88,6 +89,7 @@ export async function registerUser(username: string, displayName: string) {
 // --- SEARCH ---
 export async function search(query: string, type: string) {
   try {
+    globalRegistryLookups += 1;
     const trimmed = (query || '').trim();
 
     // If query is empty, return all latest records for browsing
@@ -376,6 +378,17 @@ export async function getUserStoreApplication(profileId: string) {
   }
 }
 
+let globalRegistryLookups = 14878;
+
+export async function recordRegistryLookup() {
+  globalRegistryLookups += 1;
+  return globalRegistryLookups;
+}
+
+export async function getRegistryLookups() {
+  return globalRegistryLookups;
+}
+
 export async function getPlatformStats() {
   try {
     const scammersCount = await db.select({ count: count() }).from(scammerEntities);
@@ -396,7 +409,8 @@ export async function getPlatformStats() {
       reports: Number(reportsCount[0]?.count ?? 0),
       resellers: Number(resellersCount[0]?.count ?? 0),
       totalLoss: Number(lossSumResult[0]?.total ?? 0),
-      scamTypesCount
+      scamTypesCount,
+      lookups: globalRegistryLookups
     };
   } catch (error) {
     console.error("Error in getPlatformStats:", error);
@@ -405,7 +419,8 @@ export async function getPlatformStats() {
       reports: 0,
       resellers: 0,
       totalLoss: 0,
-      scamTypesCount: {}
+      scamTypesCount: {},
+      lookups: globalRegistryLookups
     };
   }
 }
@@ -426,7 +441,7 @@ export async function getResellerProfile(identifier: string, callerProfileId?: s
 
     const clean = decodeURIComponent(identifier).trim().replace('@', '');
     
-    // Find reseller by id, username, telegram username, or store name
+    // Find reseller by id, profileId, username, telegram username, or store name
     const match = await db.select({
       reseller: trustedResellers,
       profile: profiles
@@ -435,9 +450,14 @@ export async function getResellerProfile(identifier: string, callerProfileId?: s
       .where(
         or(
           eq(trustedResellers.id, clean),
+          eq(trustedResellers.profileId, clean),
+          eq(profiles.id, clean),
           eq(profiles.username, clean.toLowerCase()),
+          ilike(profiles.username, clean),
+          ilike(profiles.displayName, clean),
           eq(trustedResellers.telegramUsername, clean),
-          ilike(trustedResellers.storeName, clean)
+          ilike(trustedResellers.storeName, clean),
+          ilike(trustedResellers.storeName, `%${clean}%`)
         )
       ).limit(1);
 
@@ -583,18 +603,28 @@ export async function applyForReseller(storeData: any) {
     }
 
     const existing = await db.select().from(trustedResellers).where(eq(trustedResellers.profileId, profileId)).limit(1);
+    const rawWaLink = sanitizeString(storeData.whatsapp_group_link || storeData.whatsappGroupLink);
+    const waValidation = rawWaLink ? validateWhatsAppLink(rawWaLink) : null;
+    const normalizedWaLink = waValidation && waValidation.isValid ? waValidation.normalizedUrl : rawWaLink;
+
+    const rawTgLink = sanitizeString(storeData.telegram_channel_link || storeData.telegramChannelLink);
+    const tgValidation = rawTgLink ? validateTelegramLink(rawTgLink) : null;
+    const normalizedTgLink = tgValidation && tgValidation.isValid ? tgValidation.normalizedUrl : rawTgLink;
+
     const mappedData = {
       profileId: profileId,
       storeName: sanitizeString(storeData.store_name || storeData.storeName) || 'Store',
+      ownerName: sanitizeString(storeData.owner_name || storeData.ownerName || storeData.seller_name || storeData.sellerName),
       state: sanitizeString(storeData.state),
       region: sanitizeString(storeData.region),
       countryCode: sanitizeString(storeData.country_code || storeData.countryCode) || '+91',
       primaryPlatform: storeData.primary_platform || storeData.primaryPlatform || 'whatsapp_primary',
       whatsappNumber: sanitizeString(storeData.whatsapp_number || storeData.whatsappNumber),
+      backupWhatsappNumber: sanitizeString(storeData.backup_whatsapp_number || storeData.backupWhatsappNumber || storeData.backupWhatsapp),
       whatsappUsername: sanitizeString(storeData.whatsapp_username || storeData.whatsappUsername),
-      whatsappGroupLink: sanitizeString(storeData.whatsapp_group_link || storeData.whatsappGroupLink),
+      whatsappGroupLink: normalizedWaLink,
       telegramUsername: sanitizeString(storeData.telegram_username || storeData.telegramUsername),
-      telegramChannelLink: sanitizeString(storeData.telegram_channel_link || storeData.telegramChannelLink),
+      telegramChannelLink: normalizedTgLink,
       operatingSinceYear: Number(storeData.operating_since_year || storeData.operatingSinceYear || 2022),
       instagramUsername: sanitizeString(storeData.instagram_username || storeData.instagramUsername),
       yearsActive: Number(storeData.years_active || storeData.yearsActive || 1),
@@ -779,7 +809,109 @@ export async function submitResellerReview(resellerId: string, rating: number, c
   }
 }
 export async function voteReseller(resellerId: string, voteType: string) { return true; }
-export async function assignRegionalAdmin(userId: string, region: string) { return true; }
+
+export async function assignRegionalAdmin(userId: string, targetState: string) {
+  try {
+    const existing = await db.select().from(profiles).where(eq(profiles.id, userId)).limit(1);
+    if (!existing.length) return false;
+
+    await db.update(profiles).set({
+      role: 'regional_admin',
+      state: targetState,
+      region: targetState
+    }).where(eq(profiles.id, userId));
+
+    return true;
+  } catch (error) {
+    console.error("Error in assignRegionalAdmin:", error);
+    return false;
+  }
+}
+
+export async function adminUpdateReseller(resellerId: string, updates: any) {
+  try {
+    const existing = await db.select().from(trustedResellers).where(eq(trustedResellers.id, resellerId)).limit(1);
+    if (!existing.length) return null;
+
+    const sanitizedUpdates: any = {};
+    if (updates.storeName !== undefined || updates.store_name !== undefined) {
+      sanitizedUpdates.storeName = sanitizeString(updates.storeName || updates.store_name);
+    }
+    if (updates.ownerName !== undefined || updates.owner_name !== undefined) {
+      sanitizedUpdates.ownerName = sanitizeString(updates.ownerName || updates.owner_name);
+    }
+    if (updates.whatsappNumber !== undefined || updates.whatsapp_number !== undefined) {
+      sanitizedUpdates.whatsappNumber = sanitizeString(updates.whatsappNumber || updates.whatsapp_number);
+    }
+    if (updates.whatsappUsername !== undefined || updates.whatsapp_username !== undefined) {
+      sanitizedUpdates.whatsappUsername = sanitizeString(updates.whatsappUsername || updates.whatsapp_username);
+    }
+    if (updates.whatsappGroupLink !== undefined || updates.whatsapp_group_link !== undefined) {
+      const raw = sanitizeString(updates.whatsappGroupLink || updates.whatsapp_group_link);
+      const v = raw ? validateWhatsAppLink(raw) : null;
+      sanitizedUpdates.whatsappGroupLink = v && v.isValid ? v.normalizedUrl : raw;
+    }
+    if (updates.telegramUsername !== undefined || updates.telegram_username !== undefined) {
+      sanitizedUpdates.telegramUsername = sanitizeString(updates.telegramUsername || updates.telegram_username)?.replace('@', '');
+    }
+    if (updates.telegramChannelLink !== undefined || updates.telegram_channel_link !== undefined) {
+      const raw = sanitizeString(updates.telegramChannelLink || updates.telegram_channel_link);
+      const v = raw ? validateTelegramLink(raw) : null;
+      sanitizedUpdates.telegramChannelLink = v && v.isValid ? v.normalizedUrl : raw;
+    }
+    if (updates.instagramUsername !== undefined || updates.instagram_username !== undefined) {
+      sanitizedUpdates.instagramUsername = sanitizeString(updates.instagramUsername || updates.instagram_username)?.replace('@', '');
+    }
+    if (updates.state !== undefined) sanitizedUpdates.state = sanitizeString(updates.state);
+    if (updates.bio !== undefined) sanitizedUpdates.bio = sanitizeString(updates.bio);
+    if (updates.primaryPlatform !== undefined || updates.primary_platform !== undefined) {
+      sanitizedUpdates.primaryPlatform = updates.primaryPlatform || updates.primary_platform;
+    }
+    if (updates.specializesIn !== undefined || updates.specializes_in !== undefined) {
+      sanitizedUpdates.specializesIn = updates.specializesIn || updates.specializes_in;
+    }
+    if (updates.trustScore !== undefined || updates.trust_score !== undefined) {
+      sanitizedUpdates.trustScore = Math.max(0, Math.min(100, Number(updates.trustScore ?? updates.trust_score)));
+    }
+    if (updates.tier !== undefined) sanitizedUpdates.tier = Number(updates.tier);
+    if (updates.tier2Status !== undefined || updates.tier2_status !== undefined) {
+      sanitizedUpdates.tier2Status = updates.tier2Status || updates.tier2_status;
+    }
+    if (updates.verificationStatus !== undefined || updates.verification_status !== undefined) {
+      sanitizedUpdates.verificationStatus = updates.verificationStatus || updates.verification_status;
+    }
+
+    await db.update(trustedResellers)
+      .set(sanitizedUpdates)
+      .where(eq(trustedResellers.id, resellerId));
+
+    const updated = await db.select().from(trustedResellers).where(eq(trustedResellers.id, resellerId)).limit(1);
+    return updated.length > 0 ? updated[0] : null;
+  } catch (error) {
+    console.error("Error in adminUpdateReseller:", error);
+    return null;
+  }
+}
+
+export async function adjustResellerTrustScore(resellerId: string, delta: number) {
+  try {
+    const existing = await db.select().from(trustedResellers).where(eq(trustedResellers.id, resellerId)).limit(1);
+    if (!existing.length) return null;
+
+    const currentScore = existing[0].trustScore ?? 30;
+    const newScore = Math.max(0, Math.min(100, currentScore + delta));
+
+    await db.update(trustedResellers)
+      .set({ trustScore: newScore })
+      .where(eq(trustedResellers.id, resellerId));
+
+    return newScore;
+  } catch (error) {
+    console.error("Error in adjustResellerTrustScore:", error);
+    return null;
+  }
+}
+
 export async function verifySellerByRegionalAdmin(resellerId: string, adminId: string) {
   try {
     const admin = await db.select().from(profiles).where(eq(profiles.id, adminId)).limit(1);

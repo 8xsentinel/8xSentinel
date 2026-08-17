@@ -11,7 +11,7 @@ import { useAuth } from '../../lib/firebase/AuthContext';
 import { ShieldCheck, Info, Lock } from 'lucide-react';
 
 export default function SearchSection() {
-  const { user } = useAuth();
+  const { user, canViewResellers } = useAuth();
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<{ scammers: ScammerEntity[]; resellers: TrustedReseller[] }>({
@@ -117,14 +117,15 @@ export default function SearchSection() {
                 </div>
               )}
 
-              {/* Resellers results */}
-              {hasResellers && (
+              {/* Resellers results (Only for Verified Resellers and Admins) */}
+              {hasResellers && canViewResellers && (
                 <div className="space-y-4 pt-4">
                   <h4 
-                    className="text-xs uppercase text-accent-green font-bold tracking-wider"
+                    className="text-xs uppercase text-accent-green font-bold tracking-wider font-mono flex items-center gap-1.5"
                     style={{ fontFamily: 'var(--font-h)' }}
                   >
-                    ✅ Verified Resellers ({results.resellers.length}):
+                    <ShieldCheck className="w-3.5 h-3.5 text-accent-green" />
+                    <span>Verified Resellers ({results.resellers.length}):</span>
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {results.resellers.map(reseller => (

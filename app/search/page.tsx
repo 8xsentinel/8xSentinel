@@ -32,9 +32,11 @@ import {
   Check,
   Shield,
   Layers,
-  ArrowRight,
   FileText,
-  Flame
+  Flame,
+  ChevronDown,
+  RotateCcw,
+  ArrowRight
 } from 'lucide-react';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import { toast } from 'sonner';
@@ -107,17 +109,23 @@ function SearchContent() {
     let list = [...uniqueReports];
 
     if (statusFilter !== 'all') {
-      list = list.filter(r => (r.status || 'pending').toLowerCase() === statusFilter);
+      list = list.filter(r => (r.status || 'pending').toLowerCase() === statusFilter.toLowerCase());
     }
 
     if (scamTypeFilter !== 'all') {
-      list.sort((a, b) => (Number(b.amount_lost) || 0) - (Number(a.amount_lost) || 0));
+      list = list.filter(r => (r.scam_type || r.scamType || '').toLowerCase() === scamTypeFilter.toLowerCase());
+    }
+
+    if (sortBy === 'loss_high') {
+      list.sort((a, b) => (Number(b.amount_lost || b.amountLost) || 0) - (Number(a.amount_lost || a.amountLost) || 0));
     } else if (sortBy === 'bounty_high') {
       list.sort((a, b) => {
-        const bountyA = Number(a.additional_identifiers?.recovery_bounty_amount) || 0;
-        const bountyB = Number(b.additional_identifiers?.recovery_bounty_amount) || 0;
+        const bountyA = Number(a.additional_identifiers?.recovery_bounty_amount || a.recoveryBountyAmount || a.recovery_bounty_amount) || 0;
+        const bountyB = Number(b.additional_identifiers?.recovery_bounty_amount || b.recoveryBountyAmount || b.recovery_bounty_amount) || 0;
         return bountyB - bountyA;
       });
+    } else {
+      list.sort((a, b) => new Date(b.created_at || b.incident_date || b.createdAt).getTime() - new Date(a.created_at || a.incident_date || a.createdAt).getTime());
     }
 
     return list;
@@ -126,18 +134,18 @@ function SearchContent() {
   // Stats calculation
   const totalBlacklistCount = results.scammers.length + uniqueReports.length;
   const totalFinancialLoss = useMemo(() => {
-    const fromReports = uniqueReports.reduce((sum, r) => sum + (Number(r.amount_lost) || 0), 0);
-    const fromEntities = results.scammers.reduce((sum, s) => sum + (Number(s.total_amount_lost) || 0), 0);
+    const fromReports = uniqueReports.reduce((sum, r) => sum + (Number(r.amount_lost || (r as any).amountLost) || 0), 0);
+    const fromEntities = results.scammers.reduce((sum, s) => sum + (Number(s.total_amount_lost || (s as any).totalAmountLost) || 0), 0);
     return fromReports + fromEntities;
   }, [uniqueReports, results.scammers]);
 
   const activeBountiesCount = useMemo(() => {
-    return uniqueReports.filter(r => Number(r.additional_identifiers?.recovery_bounty_amount) > 0).length;
+    return uniqueReports.filter(r => Number(r.additional_identifiers?.recovery_bounty_amount || r.recoveryBountyAmount || r.recovery_bounty_amount) > 0).length;
   }, [uniqueReports]);
 
   const displayedScammers = (filterType === 'all' || filterType === 'scammers') ? results.scammers : [];
   const displayedReports = (filterType === 'all' || filterType === 'scammers') ? filteredReports : [];
-  const displayedResellers = (filterType === 'all' || filterType === 'resellers') ? results.resellers : [];
+  const displayedResellers = (filterType === 'all' || filterType === 'resellers') && canViewResellers ? results.resellers : [];
   const hasDisplayedResults = displayedScammers.length > 0 || displayedReports.length > 0 || displayedResellers.length > 0;
 
   const getStatusBadge = (status: string) => {
@@ -227,7 +235,7 @@ function SearchContent() {
               Authentication Required
             </h2>
             <p className="text-xs text-text-secondary font-sans max-w-md mx-auto leading-relaxed">
-              Sign in with Google to query the Centralized Blacklist Registry, inspect scammer dossier proofs, and contact verified merchants.
+              Sign in with Google to query the Centralized Blacklist Registry, inspect scammer incident records, and contact verified merchants.
             </p>
           </div>
           <div className="flex justify-center pt-2">
@@ -372,41 +380,66 @@ function SearchContent() {
               {/* Sub-Filters: Status, Scam Type, Sort */}
               <div className="flex flex-wrap items-center gap-2.5">
                 {/* Status Filter */}
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="bg-bg-surface border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary font-mono focus:border-accent-cyan focus:outline-none cursor-pointer"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="approved">Approved Blacklist</option>
-                  <option value="pending">Pending Moderation</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="bg-[#080a0f]/95 border border-white/10 hover:border-white/20 focus:border-accent-cyan rounded-xl !pl-3.5 !pr-8 py-2.5 text-xs text-white font-mono appearance-none cursor-pointer focus:outline-none transition-all shadow-inner"
+                  >
+                    <option value="all" className="bg-[#080a0f] text-white">All Statuses</option>
+                    <option value="approved" className="bg-[#080a0f] text-white">Approved Blacklist</option>
+                    <option value="pending" className="bg-[#080a0f] text-white">Pending Moderation</option>
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                </div>
 
                 {/* Scam Type Filter */}
-                <select
-                  value={scamTypeFilter}
-                  onChange={(e) => setScamTypeFilter(e.target.value)}
-                  className="bg-bg-surface border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary font-mono focus:border-accent-cyan focus:outline-none cursor-pointer"
-                >
-                  <option value="all">All Scam Types</option>
-                  <option value="bank_account_freeze">Bank Freeze</option>
-                  <option value="account_pullback">Account Pullback</option>
-                  <option value="fake_account_sale">Fake Account Sale</option>
-                  <option value="payment_fraud">Payment Fraud</option>
-                  <option value="impersonation">Impersonation</option>
-                  <option value="advance_payment">Advance Payment</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={scamTypeFilter}
+                    onChange={(e) => setScamTypeFilter(e.target.value)}
+                    className="bg-[#080a0f]/95 border border-white/10 hover:border-white/20 focus:border-accent-cyan rounded-xl !pl-3.5 !pr-8 py-2.5 text-xs text-white font-mono appearance-none cursor-pointer focus:outline-none transition-all shadow-inner"
+                  >
+                    <option value="all" className="bg-[#080a0f] text-white">All Scam Types</option>
+                    <option value="bank_account_freeze" className="bg-[#080a0f] text-white">Bank Freeze</option>
+                    <option value="account_pullback" className="bg-[#080a0f] text-white">Account Pullback</option>
+                    <option value="fake_account_sale" className="bg-[#080a0f] text-white">Fake Account Sale</option>
+                    <option value="payment_fraud" className="bg-[#080a0f] text-white">Payment Fraud</option>
+                    <option value="impersonation" className="bg-[#080a0f] text-white">Impersonation</option>
+                    <option value="advance_payment" className="bg-[#080a0f] text-white">Advance Payment</option>
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                </div>
 
                 {/* Sort Filter */}
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-bg-surface border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary font-mono focus:border-accent-cyan focus:outline-none cursor-pointer"
-                >
-                  <option value="newest">Latest Incidents</option>
-                  <option value="loss_high">Highest Loss</option>
-                  <option value="bounty_high">Highest Bounty Reward</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-[#080a0f]/95 border border-white/10 hover:border-white/20 focus:border-accent-cyan rounded-xl !pl-3.5 !pr-8 py-2.5 text-xs text-white font-mono appearance-none cursor-pointer focus:outline-none transition-all shadow-inner"
+                  >
+                    <option value="newest" className="bg-[#080a0f] text-white">Latest Incidents</option>
+                    <option value="loss_high" className="bg-[#080a0f] text-white">Highest Loss</option>
+                    <option value="bounty_high" className="bg-[#080a0f] text-white">Highest Bounty Reward</option>
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                </div>
+
+                {/* Reset Sub-Filters Action */}
+                {(statusFilter !== 'all' || scamTypeFilter !== 'all' || sortBy !== 'newest') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter('all');
+                      setScamTypeFilter('all');
+                      setSortBy('newest');
+                    }}
+                    className="text-[11px] font-mono text-accent-cyan hover:text-white px-2 py-1 transition-colors cursor-pointer underline flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -471,7 +504,7 @@ function SearchContent() {
                         <Flame className="w-4 h-4 text-accent-red" />
                         <span>Flagged Scammer Entities ({displayedScammers.length})</span>
                       </h3>
-                      <span className="text-[10px] text-text-muted font-mono">Consolidated dossiers</span>
+                      <span className="text-[10px] text-text-muted font-mono">Consolidated profiles</span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -668,7 +701,7 @@ function SearchContent() {
                                   onClick={() => router.push(`/report/${report.id}`)}
                                   className="btn btn-outline py-2 px-4 text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 group-hover:border-accent-cyan group-hover:text-accent-cyan transition-colors"
                                 >
-                                  <span>Inspect Dossier</span>
+                                  <span>Inspect File</span>
                                   <ArrowRight className="w-3.5 h-3.5" />
                                 </button>
                               </div>

@@ -3,10 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../../lib/db';
 import { ScamReport } from '../../types';
-import { ShieldAlert, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, TrendingUp, AlertTriangle, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '../../lib/firebase/AuthContext';
 
 export default function StatsSection() {
+  const { user } = useAuth();
   const [highlights, setHighlights] = useState<{
     mostCommonType: string;
     mostCommonCount: number;
@@ -101,14 +103,19 @@ export default function StatsSection() {
             <p className="text-xl font-bold tracking-wide text-accent-red mt-1 font-mono">
               ₹{highlights.highestLossReport ? highlights.highestLossReport.amount_lost?.toLocaleString('en-IN') : '25,000'}
             </p>
-            {highlights.highestLossReport ? (
+            {user && highlights.highestLossReport ? (
               <Link 
                 href={`/report/${highlights.highestLossReport.id}`}
-                className="inline-block text-[12px] text-accent-red hover:underline mt-2 font-bold uppercase tracking-wider"
+                className="inline-block text-[12px] text-accent-red hover:underline mt-2 font-bold uppercase tracking-wider font-mono"
                 style={{ fontFamily: 'var(--font-h)' }}
               >
                 Review File Details &rarr;
               </Link>
+            ) : !user ? (
+              <span className="text-[11px] text-text-muted font-mono flex items-center gap-1 mt-2">
+                <Lock className="w-3 h-3 text-accent-red" />
+                <span>Sign in to view case file</span>
+              </span>
             ) : (
               <span className="text-xs text-text-secondary font-sans">No reports registered yet.</span>
             )}
@@ -128,16 +135,21 @@ export default function StatsSection() {
               Latest Scam Incident
             </h4>
             <p className="text-xl font-bold tracking-wide text-white mt-1 truncate" style={{ fontFamily: 'var(--font-h)' }}>
-              {highlights.newestReport ? highlights.newestReport.scammer_name : 'Monitoring Feed'}
+              {user && highlights.newestReport ? highlights.newestReport.scammer_name : user ? 'Monitoring Feed' : 'Threat Feed Active'}
             </p>
-            {highlights.newestReport ? (
+            {user && highlights.newestReport ? (
               <Link 
                 href={`/report/${highlights.newestReport.id}`}
-                className="inline-block text-[12px] text-accent-cyan hover:underline mt-2 font-bold uppercase tracking-wider"
+                className="inline-block text-[12px] text-accent-cyan hover:underline mt-2 font-bold uppercase tracking-wider font-mono"
                 style={{ fontFamily: 'var(--font-h)' }}
               >
                 Inspect New Report &rarr;
               </Link>
+            ) : !user ? (
+              <span className="text-[11px] text-text-muted font-mono flex items-center gap-1 mt-2">
+                <Lock className="w-3 h-3 text-accent-cyan" />
+                <span>Sign in to view target</span>
+              </span>
             ) : (
               <span className="text-xs text-text-secondary font-sans">Monitoring active channels.</span>
             )}
